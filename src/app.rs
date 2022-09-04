@@ -93,7 +93,7 @@ impl App {
 
 fn switch(routes: Route) -> Html {
     match routes {
-        Route::Home => return html! { <Home /> },
-        Route::NotFound => return html! { <PageNotFound /> },
+        Route::Home => html! { <Home /> },
+        Route::NotFound => html! { <PageNotFound /> },
     }
 }
