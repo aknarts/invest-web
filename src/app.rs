@@ -46,7 +46,7 @@ impl Component for App {
                 { self.view_nav(ctx.link()) }
 
                 <main>
-                    <Switch<Route> render={switch} />
+                    <Switch<Route> render={Switch::render(switch)} />
                 </main>
                 <footer class="footer">
                     <div class="content has-text-centered">
@@ -91,7 +91,7 @@ impl App {
     }
 }
 
-fn switch(routes: Route) -> Html {
+fn switch(routes: &Route) -> Html {
     match routes {
         Route::Home => html! { <Home /> },
         Route::NotFound => html! { <PageNotFound /> },
