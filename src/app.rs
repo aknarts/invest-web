@@ -1,5 +1,8 @@
+use crate::components::user_context_provider::UserContextProvider;
 use crate::pages::home::Home;
+use crate::pages::login::Login;
 use crate::pages::page_not_found::PageNotFound;
+use crate::pages::register::Register;
 use yew::html::Scope;
 use yew::html::*;
 use yew::prelude::*;
@@ -12,6 +15,10 @@ pub enum Route {
     #[not_found]
     #[at("/404")]
     NotFound,
+    #[at("/login")]
+    Login,
+    #[at("/register")]
+    Register,
 }
 
 pub enum Msg {
@@ -42,19 +49,21 @@ impl Component for App {
 
     fn view(&self, ctx: &Context<Self>) -> Html {
         html! {
-            <BrowserRouter>
-                { self.view_nav(ctx.link()) }
+            <UserContextProvider>
+                <BrowserRouter>
+                    { self.view_nav(ctx.link()) }
 
-                <main>
-                    <Switch<Route> render={Switch::render(switch)} />
-                </main>
-                <footer class="footer">
-                    <div class="content has-text-centered">
-                        { "Powered by " }
-                        <a href="https://yew.rs">{ "Yew" }</a>
-                    </div>
-                </footer>
-            </BrowserRouter>
+                    <main>
+                        <Switch<Route> render={Switch::render(switch)} />
+                    </main>
+                    <footer class="footer">
+                        <div class="content has-text-centered">
+                            { "Powered by " }
+                            <a href="https://yew.rs">{ "Yew" }</a>
+                        </div>
+                    </footer>
+                </BrowserRouter>
+            </UserContextProvider>
         }
     }
 }
@@ -68,7 +77,7 @@ impl App {
         html! {
             <nav class="navbar is-primary" role="navigation" aria-label="main navigation">
                 <div class="navbar-brand">
-                    <h1 class="navbar-item is-size-3">{ "Yew Blog" }</h1>
+                    <h1 class="navbar-item is-size-3">{ "Invest Web" }</h1>
 
                     <button class={classes!("navbar-burger", "burger", active_class)}
                         aria-label="menu" aria-expanded="false"
@@ -85,6 +94,14 @@ impl App {
                             { "Home" }
                         </Link<Route>>
                     </div>
+                <div class="navbar-end">
+                        <Link<Route> classes={classes!("navbar-item")} to={Route::Login}>
+                            { "Login" }
+                        </Link<Route>>
+                        <Link<Route> classes={classes!("navbar-item")} to={Route::Register}>
+                            { "Register" }
+                        </Link<Route>>
+                    </div>
                 </div>
             </nav>
         }
@@ -92,8 +109,11 @@ impl App {
 }
 
 fn switch(routes: &Route) -> Html {
+    println!("Routing to {:?}", routes);
     match routes {
         Route::Home => html! { <Home /> },
         Route::NotFound => html! { <PageNotFound /> },
+        Route::Login => html! {<Login />},
+        Route::Register => html! {<Register />},
     }
 }
