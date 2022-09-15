@@ -6,7 +6,7 @@ use yew_router::prelude::*;
 
 use crate::app::Route;
 use crate::services::requests::set_token;
-use crate::types::auth::UserInfo;
+use crate::types::auth::{RegisterResponse, UserInfo};
 
 /// State handle for the [`use_user_context`] hook.
 pub struct UseUserContextHandle {
@@ -19,6 +19,19 @@ impl UseUserContextHandle {
         // Set global token after logged in
         set_token(Some(value.token.clone()));
         self.inner.set(value);
+        // Redirect to home page
+        self.history.push(Route::Home);
+    }
+
+    pub fn register(&self, value: RegisterResponse) {
+        // Set global token after logged in
+        set_token(Some(value.token.clone()));
+        let info = UserInfo {
+            email: value.email,
+            token: value.token,
+            username: value.username,
+        };
+        self.inner.set(info);
         // Redirect to home page
         self.history.push(Route::Home);
     }

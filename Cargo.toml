@@ -15,13 +15,15 @@ yew = { version = "0.19" }
 yew-router = "0.16"
 yew-hooks = "0.1.56"
 wasm-logger = "0.2"
-parking_lot = "0.10.0"
+parking_lot = "0.12.1"
 log = "0.4"
-gloo = "0.4"
+gloo = "0.8.0"
 thiserror = "1"
 lazy_static = "1.4.0"
 serde = "1"
 reqwest = { version = "0.11.7", features = ["json"] }
+rust-crypto-wasm = "0.3.1"
+argon2 = "0.4.1"
 
 [dependencies.web-sys]
 version = "0.3"

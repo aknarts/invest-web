@@ -6,8 +6,8 @@ use serde::{de::DeserializeOwned, Serialize};
 use crate::error::Error;
 use crate::types::ErrorInfo;
 
-const API_ROOT: &str = "https://api.realworld.io/api";
-const TOKEN_KEY: &str = "yew.token";
+const API_ROOT: &str = "http://investown2.test:8081/";
+const TOKEN_KEY: &str = "invest.token";
 
 lazy_static! {
     /// Jwt token read from local storage.
@@ -45,12 +45,12 @@ where
 {
     let allow_body = method == reqwest::Method::POST || method == reqwest::Method::PUT;
     let url = format!("{}{}", API_ROOT, url);
-    let mut builder = reqwest::Client::new()
-        .request(method, url)
-        .header("Content-Type", "application/json");
+    let mut builder = reqwest::Client::new().request(method, &url);
     if let Some(token) = get_token() {
         builder = builder.bearer_auth(token);
     }
+
+    println!("url: {}", url);
 
     if allow_body {
         builder = builder.json(&body);
@@ -121,10 +121,4 @@ where
     B: Serialize + std::fmt::Debug,
 {
     request(reqwest::Method::PUT, url, body).await
-}
-
-/// Set limit for pagination
-pub fn limit(count: u32, p: u32) -> String {
-    let offset = if p > 0 { p * count } else { 0 };
-    format!("limit={}&offset={}", count, offset)
 }
