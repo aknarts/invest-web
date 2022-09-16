@@ -86,6 +86,7 @@ pub fn register() -> Html {
                                         class="input"
                                         type="text"
                                         placeholder="Username"
+                                        autocomplete="username"
                                         value={register_info.username.clone()}
                                         oninput={oninput_username}
                                         />
@@ -100,6 +101,7 @@ pub fn register() -> Html {
                                         class="input"
                                         type="email"
                                         placeholder="Email"
+                                        autocomplete="email"
                                         value={register_info.email.clone()}
                                         oninput={oninput_email}
                                         />
@@ -114,6 +116,7 @@ pub fn register() -> Html {
                                         class="input"
                                         type="password"
                                         placeholder="Password"
+                                        autocomplete="new_password"
                                         value={register_info.password.clone()}
                                         oninput={oninput_password}
                                         />

@@ -81,6 +81,7 @@ pub fn login() -> Html {
                                             class="input"
                                             type="text"
                                             placeholder="Username"
+                                            autocomplete="username"
                                             value={login_info.username.clone()}
                                             oninput={oninput_username}
                                             />
@@ -95,6 +96,7 @@ pub fn login() -> Html {
                                             class="input"
                                             type="password"
                                             placeholder="Password"
+                                            autocomplete="current_password"
                                             value={login_info.password.clone()}
                                             oninput={oninput_password}
                                             />

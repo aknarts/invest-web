@@ -3,9 +3,8 @@ use yew_hooks::use_async;
 use yew_router::prelude::*;
 
 use crate::app::Route;
-use crate::error::Error;
 use crate::hooks::use_user_context;
-use crate::types::auth::{ApiResult, UserInfo};
+use crate::types::auth::UserInfo;
 
 #[function_component(Header)]
 pub fn header() -> Html {
