@@ -11,7 +11,7 @@ pub fn header() -> Html {
     let user_ctx = use_user_context();
     let active = use_state(|| true);
 
-    let active_class = if !*active { "is-active" } else { "" };
+    let active_class = if *active { "" } else { "is-active" };
 
     let onclick = { Callback::from(move |_| active.set(!*active)) };
 
@@ -32,7 +32,7 @@ pub fn header() -> Html {
             </div>
             {
                 if user_ctx.is_authenticated() {
-                    logged_in_view((*user_ctx).clone(), active_class.to_string())
+                    logged_in_view(&*user_ctx, active_class.to_string())
                 } else {
                     logged_out_view(active_class.to_string())
                 }
@@ -70,7 +70,7 @@ fn logged_out_view(active_class: String) -> Html {
     }
 }
 
-fn logged_in_view(user_info: UserInfo, active_class: String) -> Html {
+fn logged_in_view(user_info: &UserInfo, active_class: String) -> Html {
     let user_ctx = use_user_context();
     let logout = use_async(crate::services::auth::logout());
     let onclick = {

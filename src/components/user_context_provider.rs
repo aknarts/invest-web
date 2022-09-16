@@ -44,8 +44,8 @@ pub fn user_context_provider(props: &Props) -> Html {
                 || ()
             },
             current_user,
-        )
-    }
+        );
+    };
 
     html! {
         <ContextProvider<UseStateHandle<UserInfo>> context={user_ctx}>
