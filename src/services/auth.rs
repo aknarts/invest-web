@@ -1,5 +1,6 @@
 use super::requests::{request_get, request_post, request_put};
 use crate::error::Error;
+use crate::services::requests::{request_patch, set_token};
 use crate::types::auth::*;
 
 /// Get current user info
@@ -15,4 +16,11 @@ pub async fn login(login_info: LoginInfo) -> Result<UserInfo, Error> {
 /// Register a new user
 pub async fn register(register_info: RegisterInfo) -> Result<RegisterResponse, Error> {
     request_post::<RegisterInfo, RegisterResponse>("users".to_string(), register_info).await
+}
+
+/// Get current user info
+pub async fn logout() -> Result<ApiResult, Error> {
+    let result = request_patch::<(), ApiResult>("users".to_string(), ()).await;
+    set_token(None);
+    result
 }

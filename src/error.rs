@@ -4,7 +4,7 @@ use crate::types::ErrorInfo;
 use thiserror::Error as ThisError;
 
 /// Define all possible errors
-#[derive(ThisError, Clone, Debug, PartialEq)]
+#[derive(ThisError, Clone, Debug, Eq, PartialEq)]
 pub enum Error {
     /// 401
     #[error("Unauthorized")]

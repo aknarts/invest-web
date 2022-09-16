@@ -122,3 +122,12 @@ where
 {
     request(reqwest::Method::PUT, url, body).await
 }
+
+/// Patch request with a body
+pub async fn request_patch<B, T>(url: String, body: B) -> Result<T, Error>
+where
+    T: DeserializeOwned + 'static + std::fmt::Debug,
+    B: Serialize + std::fmt::Debug,
+{
+    request(reqwest::Method::PATCH, url, body).await
+}

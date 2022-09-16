@@ -8,7 +8,7 @@ use crate::app::Route;
 use crate::components::list_errors::ListErrors;
 use crate::hooks::use_user_context;
 use crate::services::auth::*;
-use crate::types::auth::{LoginInfo, LoginInfoWrapper};
+use crate::types::auth::LoginInfo;
 
 /// Login page
 #[function_component(Login)]

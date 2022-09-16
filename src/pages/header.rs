@@ -1,14 +1,11 @@
-use std::ops::Not;
 use yew::prelude::*;
+use yew_hooks::use_async;
 use yew_router::prelude::*;
 
 use crate::app::Route;
+use crate::error::Error;
 use crate::hooks::use_user_context;
-use crate::types::auth::UserInfo;
-
-pub enum Msg {
-    ToggleNavbar,
-}
+use crate::types::auth::{ApiResult, UserInfo};
 
 #[function_component(Header)]
 pub fn header() -> Html {
@@ -17,10 +14,7 @@ pub fn header() -> Html {
 
     let active_class = if !*active { "is-active" } else { "" };
 
-    let onclick = {
-        let active = active.clone();
-        Callback::from(move |_| active.set(!*active))
-    };
+    let onclick = { Callback::from(move |_| active.set(!*active)) };
 
     html! {
         <nav class="navbar is-transparent is-fixed-top has-shadow" role="navigation" aria-label="main navigation">
@@ -79,8 +73,10 @@ fn logged_out_view(active_class: String) -> Html {
 
 fn logged_in_view(user_info: UserInfo, active_class: String) -> Html {
     let user_ctx = use_user_context();
+    let logout = use_async(crate::services::auth::logout());
     let onclick = {
         Callback::from(move |_| {
+            logout.run();
             // Logout current user
             user_ctx.logout();
         })

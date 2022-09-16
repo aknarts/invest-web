@@ -38,7 +38,6 @@ impl UseUserContextHandle {
 
     pub fn logout(&self) {
         // Clear global token after logged out
-        set_token(None);
         self.inner.set(UserInfo::default());
         // Redirect to home page
         self.history.push(Route::Home);

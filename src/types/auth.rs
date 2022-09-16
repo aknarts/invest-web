@@ -20,6 +20,11 @@ pub struct RegisterInfo {
     pub email: String,
 }
 
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
+pub struct ApiResult {
+    pub result: String,
+}
+
 #[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, Default)]
 pub struct RegisterResponse {
     pub token: String,
@@ -47,7 +52,7 @@ impl UserInfo {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
+#[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct UserInfoWrapper {
     pub user: UserInfo,
