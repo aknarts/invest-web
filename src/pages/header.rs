@@ -10,34 +10,56 @@ use crate::types::auth::UserInfo;
 pub fn header() -> Html {
     let user_ctx = use_user_context();
     let active = use_state(|| true);
+    let resent = use_state(|| true);
 
     let active_class = if *active { "" } else { "is-active" };
 
     let onclick = { Callback::from(move |_| active.set(!*active)) };
 
+    let resend_email = use_async(crate::services::auth::resend());
+
+    let show_resend_notification = *resent;
+
+    let resend = {
+        Callback::from(move |_| {
+            resent.set(!*resent);
+            resend_email.run();
+        })
+    };
+
     html! {
-        <nav class="navbar is-transparent is-fixed-top has-shadow" role="navigation" aria-label="main navigation">
-            <div class="navbar-brand">
-                <Link<Route> to={Route::Home} classes="navbar-item is-size-3 h1">
-                    { "Invest Web" }
-                </Link<Route>>
-                <button class={classes!("navbar-burger", "burger", active_class)}
-                        aria-label="menu" aria-expanded="false"
-                        {onclick}
-                    >
-                        <span aria-hidden="true"></span>
-                        <span aria-hidden="true"></span>
-                        <span aria-hidden="true"></span>
-                </button>
-            </div>
-            {
-                if user_ctx.is_authenticated() {
-                    logged_in_view(&*user_ctx, active_class.to_string())
-                } else {
-                    logged_out_view(active_class.to_string())
+        <>
+            <nav class="navbar is-transparent is-fixed-top has-shadow" role="navigation" aria-label="main navigation">
+                <div class="navbar-brand">
+                    <Link<Route> to={Route::Home} classes="navbar-item is-size-3 h1">
+                        { "Invest Web" }
+                    </Link<Route>>
+                    <button class={classes!("navbar-burger", "burger", active_class)}
+                            aria-label="menu" aria-expanded="false"
+                            {onclick}
+                        >
+                            <span aria-hidden="true"></span>
+                            <span aria-hidden="true"></span>
+                            <span aria-hidden="true"></span>
+                    </button>
+                </div>
+                {
+                    if user_ctx.is_authenticated() {
+                        logged_in_view(&*user_ctx, active_class.to_string())
+                    } else {
+                        logged_out_view(active_class.to_string())
+                    }
                 }
+            </nav>
+            if !user_ctx.email_valid && user_ctx.is_authenticated() && show_resend_notification {
+                <div class="notification is-warning">
+                    { "Email not verified please verify it. " }
+                    <a onclick={resend}>
+                        { "Resend verification email." }
+                    </a>
+                </div>
             }
-        </nav>
+        </>
     }
 }
 

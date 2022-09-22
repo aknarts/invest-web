@@ -1,10 +1,10 @@
-use gloo::storage::{LocalStorage, Storage};
-use lazy_static::lazy_static;
-use parking_lot::RwLock;
-use serde::{de::DeserializeOwned, Serialize};
-
 use crate::error::Error;
 use crate::types::ErrorInfo;
+use gloo::storage::{LocalStorage, Storage};
+use lazy_static::lazy_static;
+use log::debug;
+use parking_lot::RwLock;
+use serde::{de::DeserializeOwned, Serialize};
 
 const API_ROOT: &str = "http://investown2.test:8081/";
 const TOKEN_KEY: &str = "invest.token";
@@ -50,7 +50,7 @@ where
         builder = builder.bearer_auth(token);
     }
 
-    println!("url: {}", url);
+    debug!("url: {}", url);
 
     if allow_body {
         builder = builder.json(&body);
@@ -90,6 +90,7 @@ where
 }
 
 /// Delete request
+#[allow(dead_code)]
 pub async fn request_delete<T>(url: String) -> Result<T, Error>
 where
     T: DeserializeOwned + 'static + std::fmt::Debug,

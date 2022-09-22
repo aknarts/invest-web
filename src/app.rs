@@ -1,10 +1,12 @@
 use crate::components::user_context_provider::UserContextProvider;
+use crate::pages::confirm_email::ConfirmEmail;
 use crate::pages::footer::Footer;
 use crate::pages::header::Header;
 use crate::pages::home::Home;
 use crate::pages::login::Login;
 use crate::pages::page_not_found::PageNotFound;
 use crate::pages::register::Register;
+use log::debug;
 use yew::html::*;
 use yew::prelude::*;
 use yew_router::prelude::*;
@@ -20,6 +22,8 @@ pub enum Route {
     Login,
     #[at("/register")]
     Register,
+    #[at("/confirm_email")]
+    ConfirmEmail,
 }
 
 pub(crate) struct App {}
@@ -52,11 +56,12 @@ impl Component for App {
 }
 
 fn switch(routes: &Route) -> Html {
-    println!("Routing to {:?}", routes);
+    debug!("Routing to {:?}", routes);
     match routes {
         Route::Home => html! { <Home /> },
         Route::NotFound => html! { <PageNotFound /> },
         Route::Login => html! {<Login />},
         Route::Register => html! {<Register />},
+        Route::ConfirmEmail => html! {<ConfirmEmail />},
     }
 }

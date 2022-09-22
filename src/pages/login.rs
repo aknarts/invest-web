@@ -1,14 +1,12 @@
-use web_sys::HtmlInputElement;
-
-use yew::prelude::*;
-use yew_hooks::prelude::*;
-use yew_router::prelude::*;
-
 use crate::app::Route;
 use crate::components::list_errors::ListErrors;
 use crate::hooks::use_user_context;
 use crate::services::auth::*;
 use crate::types::auth::LoginInfo;
+use web_sys::HtmlInputElement;
+use yew::prelude::*;
+use yew_hooks::prelude::*;
+use yew_router::prelude::*;
 
 /// Login page
 #[function_component(Login)]

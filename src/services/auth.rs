@@ -24,3 +24,13 @@ pub async fn logout() -> Result<ApiResult, Error> {
     set_token(None);
     result
 }
+
+/// Get current user info
+pub async fn confirm_email(code: &str) -> Result<ApiResult, Error> {
+    request_get::<ApiResult>(format!("/users/email?code={}", code)).await
+}
+
+/// Get current user info
+pub async fn resend() -> Result<ApiResult, Error> {
+    request_patch::<(), ApiResult>("/users/email".to_string(), ()).await
+}

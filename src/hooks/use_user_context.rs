@@ -1,12 +1,11 @@
-use std::fmt;
-use std::ops::Deref;
-
-use yew::prelude::*;
-use yew_router::prelude::*;
-
 use crate::app::Route;
 use crate::services::requests::set_token;
 use crate::types::auth::{RegisterResponse, UserInfo};
+use std::fmt;
+use std::ops::Deref;
+use yew::context::ContextHandle;
+use yew::prelude::*;
+use yew_router::prelude::*;
 
 /// State handle for the [`use_user_context`] hook.
 pub struct Handle {
@@ -30,6 +29,7 @@ impl Handle {
             email: value.email,
             token: value.token,
             username: value.username,
+            email_valid: false,
         };
         self.inner.set(info);
         // Redirect to home page
@@ -41,6 +41,12 @@ impl Handle {
         self.inner.set(UserInfo::default());
         // Redirect to home page
         self.history.push(Route::Home);
+    }
+
+    pub fn validate_email(&self, valid: bool) {
+        let mut ctx = (*self.inner).clone();
+        ctx.email_valid = valid;
+        self.inner.set(ctx);
     }
 }
 
@@ -80,5 +86,22 @@ pub fn use_user_context() -> Handle {
     let inner = use_context::<UseStateHandle<UserInfo>>().unwrap();
     let history = use_history().unwrap();
 
+    Handle { inner, history }
+}
+
+pub fn use_user_context_from_ctx<T: yew::Component>(ctx: &Context<T>) -> Handle {
+    struct UseContextState<T2: Clone + PartialEq + 'static> {
+        initialized: bool,
+        context: Option<(T2, ContextHandle<T2>)>,
+    }
+
+    let scope = ctx.link();
+
+    let callback = Callback::from(move |_id| ());
+    let (inner, s) = scope
+        .context::<UseStateHandle<UserInfo>>(callback.into())
+        .unwrap();
+
+    let history = ctx.link().history().unwrap();
     Handle { inner, history }
 }

@@ -20,7 +20,7 @@ pub struct RegisterInfo {
     pub email: String,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, Default)]
+#[derive(Serialize, Deserialize, Clone, Debug, Default, Eq, PartialEq)]
 pub struct ApiResult {
     pub result: String,
 }
@@ -44,6 +44,7 @@ pub struct UserInfo {
     pub email: String,
     pub token: String,
     pub username: String,
+    pub email_valid: bool,
 }
 
 impl UserInfo {

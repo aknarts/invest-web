@@ -1,11 +1,10 @@
 //! User context provider.
 
-use yew::prelude::*;
-use yew_hooks::prelude::*;
-
 use crate::error::Error;
 use crate::services::{auth::*, requests::get_token, requests::set_token};
 use crate::types::auth::UserInfo;
+use yew::prelude::*;
+use yew_hooks::prelude::*;
 
 #[derive(Properties, Clone, PartialEq)]
 pub struct Props {
