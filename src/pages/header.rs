@@ -1,10 +1,11 @@
 use yew::prelude::*;
-use yew_hooks::use_async;
+use yew_hooks::{use_async, UseAsyncHandle};
 use yew_router::prelude::*;
 
 use crate::app::Route;
+use crate::error::Error;
 use crate::hooks::use_user_context;
-use crate::types::auth::UserInfo;
+use crate::types::auth::ApiResult;
 
 #[function_component(Header)]
 pub fn header() -> Html {
@@ -19,6 +20,8 @@ pub fn header() -> Html {
     let resend_email = use_async(crate::services::auth::resend());
 
     let show_resend_notification = *resent;
+
+    let logout = use_async(crate::services::auth::logout());
 
     let resend = {
         Callback::from(move |_| {
@@ -45,7 +48,7 @@ pub fn header() -> Html {
                 </div>
                 {
                     if user_ctx.is_authenticated() {
-                        logged_in_view(&*user_ctx, active_class.to_string())
+                        logged_in_view(&user_ctx, active_class.to_string(), logout)
                     } else {
                         logged_out_view(active_class.to_string())
                     }
@@ -92,9 +95,12 @@ fn logged_out_view(active_class: String) -> Html {
     }
 }
 
-fn logged_in_view(user_info: &UserInfo, active_class: String) -> Html {
-    let user_ctx = use_user_context();
-    let logout = use_async(crate::services::auth::logout());
+fn logged_in_view(
+    user_info: &crate::hooks::Handle,
+    active_class: String,
+    logout: UseAsyncHandle<ApiResult, Error>,
+) -> Html {
+    let user_ctx = user_info.clone();
     let onclick = {
         Callback::from(move |_| {
             logout.run();

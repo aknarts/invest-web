@@ -3,6 +3,7 @@
 use crate::error::Error;
 use crate::services::{auth::*, requests::get_token, requests::set_token};
 use crate::types::auth::UserInfo;
+use log::{debug, warn};
 use yew::prelude::*;
 use yew_hooks::prelude::*;
 
@@ -31,12 +32,16 @@ pub fn user_context_provider(props: &Props) -> Html {
         use_effect_with_deps(
             move |current_user| {
                 if let Some(user_info) = &current_user.data {
+                    debug!("Setting up user info: {:?}", user_info);
                     user_ctx.set(user_info.clone());
                 }
 
                 if let Some(error) = &current_user.error {
                     match error {
-                        Error::Unauthorized | Error::Forbidden => set_token(None),
+                        Error::Unauthorized | Error::Forbidden => {
+                            warn!("Unauthorized");
+                            set_token(None)
+                        }
                         _ => (),
                     }
                 }

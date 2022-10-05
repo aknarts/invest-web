@@ -6,6 +6,10 @@ use thiserror::Error as ThisError;
 /// Define all possible errors
 #[derive(ThisError, Clone, Debug, Eq, PartialEq)]
 pub enum Error {
+    /// 400
+    #[error("Bad Request")]
+    BadRequest,
+
     /// 401
     #[error("Unauthorized")]
     Unauthorized,

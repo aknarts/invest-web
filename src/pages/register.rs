@@ -1,7 +1,6 @@
 use crate::app::Route;
 use crate::components::list_errors::ListErrors;
 use crate::hooks::use_user_context;
-use crate::services::auth::*;
 use crate::types::auth::RegisterInfo;
 use web_sys::HtmlInputElement;
 use yew::prelude::*;
@@ -14,7 +13,7 @@ pub fn register() -> Html {
     let register_info = use_state(RegisterInfo::default);
     let user_register = {
         let register_info = register_info.clone();
-        use_async(async move { register((*register_info).clone()).await })
+        use_async(async move { crate::services::auth::register((*register_info).clone()).await })
     };
 
     {
@@ -31,7 +30,7 @@ pub fn register() -> Html {
 
     let onsubmit = {
         let user_register = user_register.clone();
-        Callback::from(move |e: FocusEvent| {
+        Callback::from(move |e: SubmitEvent| {
             e.prevent_default(); /* Prevent event propagation */
             user_register.run();
         })

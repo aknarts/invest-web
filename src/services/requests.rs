@@ -69,6 +69,7 @@ where
             }
         } else {
             match data.status().as_u16() {
+                400 => Err(Error::BadRequest),
                 401 => Err(Error::Unauthorized),
                 403 => Err(Error::Forbidden),
                 404 => Err(Error::NotFound),

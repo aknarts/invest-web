@@ -46,7 +46,7 @@ impl Component for App {
                 <BrowserRouter>
                     <Header />
                     <main class="section is-large">
-                        <Switch<Route> render={Switch::render(switch)} />
+                        <Switch<Route> render={switch} />
                     </main>
                     <Footer />
                 </BrowserRouter>
@@ -55,7 +55,7 @@ impl Component for App {
     }
 }
 
-fn switch(routes: &Route) -> Html {
+fn switch(routes: Route) -> Html {
     debug!("Routing to {:?}", routes);
     match routes {
         Route::Home => html! { <Home /> },

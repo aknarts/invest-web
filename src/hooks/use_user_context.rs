@@ -3,14 +3,13 @@ use crate::services::requests::set_token;
 use crate::types::auth::{RegisterResponse, UserInfo};
 use std::fmt;
 use std::ops::Deref;
-use yew::context::ContextHandle;
 use yew::prelude::*;
-use yew_router::prelude::*;
+use yew_router::prelude::{use_navigator, Navigator};
 
 /// State handle for the [`use_user_context`] hook.
 pub struct Handle {
     inner: UseStateHandle<UserInfo>,
-    history: AnyHistory,
+    history: Navigator,
 }
 
 impl Handle {
@@ -19,7 +18,7 @@ impl Handle {
         set_token(Some(value.token.clone()));
         self.inner.set(value);
         // Redirect to home page
-        self.history.push(Route::Home);
+        self.history.push(&Route::Home);
     }
 
     pub fn register(&self, value: RegisterResponse) {
@@ -33,14 +32,14 @@ impl Handle {
         };
         self.inner.set(info);
         // Redirect to home page
-        self.history.push(Route::Home);
+        self.history.push(&Route::Home);
     }
 
     pub fn logout(&self) {
         // Clear global token after logged out
         self.inner.set(UserInfo::default());
         // Redirect to home page
-        self.history.push(Route::Home);
+        self.history.push(&Route::Home);
     }
 
     pub fn validate_email(&self, valid: bool) {
@@ -81,27 +80,11 @@ impl fmt::Debug for Handle {
     }
 }
 
+#[hook]
 /// This hook is used to manage user context.
 pub fn use_user_context() -> Handle {
     let inner = use_context::<UseStateHandle<UserInfo>>().unwrap();
-    let history = use_history().unwrap();
+    let history = use_navigator().unwrap();
 
-    Handle { inner, history }
-}
-
-pub fn use_user_context_from_ctx<T: yew::Component>(ctx: &Context<T>) -> Handle {
-    struct UseContextState<T2: Clone + PartialEq + 'static> {
-        initialized: bool,
-        context: Option<(T2, ContextHandle<T2>)>,
-    }
-
-    let scope = ctx.link();
-
-    let callback = Callback::from(move |_id| ());
-    let (inner, s) = scope
-        .context::<UseStateHandle<UserInfo>>(callback.into())
-        .unwrap();
-
-    let history = ctx.link().history().unwrap();
     Handle { inner, history }
 }

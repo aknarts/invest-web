@@ -1,7 +1,6 @@
 use crate::app::Route;
 use crate::components::list_errors::ListErrors;
 use crate::hooks::use_user_context;
-use crate::services::auth::*;
 use crate::types::auth::LoginInfo;
 use web_sys::HtmlInputElement;
 use yew::prelude::*;
@@ -17,7 +16,7 @@ pub fn login() -> Html {
         let login_info = login_info.clone();
         use_async(async move {
             let request = (*login_info).clone();
-            login(request).await
+            crate::services::auth::login(request).await
         })
     };
 
@@ -33,7 +32,7 @@ pub fn login() -> Html {
 
     let onsubmit = {
         let user_login = user_login.clone();
-        Callback::from(move |e: FocusEvent| {
+        Callback::from(move |e: SubmitEvent| {
             e.prevent_default(); /* Prevent event propagation */
             user_login.run();
         })
