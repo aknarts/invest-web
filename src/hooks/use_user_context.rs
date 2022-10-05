@@ -23,16 +23,15 @@ impl Handle {
 
     pub fn register(&self, value: RegisterResponse) {
         // Set global token after logged in
-        set_token(Some(value.token.clone()));
-        let info = UserInfo {
-            email: value.email,
-            token: value.token,
-            username: value.username,
-            email_valid: false,
+        match value.data {
+            None => {}
+            Some(data) => {
+                set_token(Some(data.token.clone()));
+                self.inner.set(data);
+                // Redirect to home page
+                self.history.push(&Route::Home);
+            }
         };
-        self.inner.set(info);
-        // Redirect to home page
-        self.history.push(&Route::Home);
     }
 
     pub fn logout(&self) {

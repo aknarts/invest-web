@@ -32,7 +32,6 @@ pub fn user_context_provider(props: &Props) -> Html {
         use_effect_with_deps(
             move |current_user| {
                 if let Some(user_info) = &current_user.data {
-                    debug!("Setting up user info: {:?}", user_info);
                     user_ctx.set(user_info.clone());
                 }
 

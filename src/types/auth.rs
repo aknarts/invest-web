@@ -27,10 +27,8 @@ pub struct ApiResult {
 
 #[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, Default)]
 pub struct RegisterResponse {
-    pub token: String,
     pub result: String,
-    pub username: String,
-    pub email: String,
+    pub data: Option<UserInfo>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -45,6 +43,7 @@ pub struct UserInfo {
     pub token: String,
     pub username: String,
     pub email_valid: bool,
+    pub permissions: Vec<String>,
 }
 
 impl UserInfo {
