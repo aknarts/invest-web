@@ -1,7 +1,7 @@
 //! User context provider.
 
 use crate::error::Error;
-use crate::services::{auth::*, requests::get_token, requests::set_token};
+use crate::services::{auth::current, requests::get_token, requests::set_token};
 use crate::types::auth::UserInfo;
 use log::{debug, warn};
 use yew::prelude::*;
@@ -40,7 +40,7 @@ pub fn user_context_provider(props: &Props) -> Html {
                     match error {
                         Error::Unauthorized | Error::Forbidden => {
                             warn!("Unauthorized");
-                            set_token(None)
+                            set_token(None);
                         }
                         _ => (),
                     }

@@ -7,7 +7,7 @@ use crate::pages::login::Login;
 use crate::pages::page_not_found::PageNotFound;
 use crate::pages::register::Register;
 use log::debug;
-use yew::html::*;
+use yew::html::Html;
 use yew::prelude::*;
 use yew_router::prelude::*;
 
@@ -26,35 +26,23 @@ pub enum Route {
     ConfirmEmail,
 }
 
-pub(crate) struct App {}
-
-impl Component for App {
-    type Message = ();
-    type Properties = ();
-
-    fn create(_ctx: &Context<Self>) -> Self {
-        Self {}
-    }
-
-    fn update(&mut self, _ctx: &Context<Self>, _msg: Self::Message) -> bool {
-        true
-    }
-
-    fn view(&self, _ctx: &Context<Self>) -> Html {
-        html! {
-            <UserContextProvider>
-                <BrowserRouter>
-                    <Header />
-                    <main class="section is-large">
-                        <Switch<Route> render={switch} />
-                    </main>
-                    <Footer />
-                </BrowserRouter>
-            </UserContextProvider>
-        }
+#[function_component(App)]
+pub fn user_context_provider() -> Html {
+    html! {
+        <UserContextProvider>
+            <BrowserRouter>
+                <Header />
+                <main class="section is-large">
+                    <Switch<Route> render={switch} />
+                </main>
+                <Footer />
+            </BrowserRouter>
+        </UserContextProvider>
     }
 }
 
+// Allowing because this is how yew defines the function
+#[allow(clippy::needless_pass_by_value)]
 fn switch(routes: Route) -> Html {
     debug!("Routing to {:?}", routes);
     match routes {

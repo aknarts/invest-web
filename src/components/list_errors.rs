@@ -9,40 +9,43 @@ pub struct Props {
 
 #[function_component(ListErrors)]
 pub fn list_errors(props: &Props) -> Html {
-    if let Some(error) = &props.error {
-        html! {
-            <ul class="error-messages">
-                {
-                    match error {
-                        Error::UnprocessableEntity(error_info) => {
-                            html! {
-                                <>
-                                {for error_info.errors.iter().map(|(key, value)| {
+    props.error.as_ref().map_or_else(
+        || html! {},
+        |error| {
+            html! {
+                html! {
+                    <ul class="error-messages">
+                        {
+                            match error {
+                                Error::UnprocessableEntity(error_info) => {
                                     html! {
-                                        <li>
-                                        { key }
-                                        {for value.iter().map(|e| {
+                                        <>
+                                        {for error_info.errors.iter().map(|(key, value)| {
                                             html! {
-                                                <>{" "} {e}</>
+                                                <li>
+                                                { key }
+                                                {for value.iter().map(|e| {
+                                                    html! {
+                                                        <>{" "} {e}</>
+                                                    }
+                                                })}
+                                                </li>
                                             }
                                         })}
-                                        </li>
+                                        </>
                                     }
-                                })}
-                                </>
-                            }
-                        }
-                        _ => {
-                            html! {
-                                <li>{error}</li>
-                            }
-                        }
+                                }
+                                _ => {
+                                    html! {
+                                        <li>{error}</li>
+                                    }
+                                }
 
-                    }
+                            }
+                        }
+                    </ul>
                 }
-            </ul>
-        }
-    } else {
-        html! {}
-    }
+            }
+        },
+    )
 }

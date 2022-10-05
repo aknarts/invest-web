@@ -1,7 +1,7 @@
 use super::requests::{request_get, request_post, request_put};
 use crate::error::Error;
 use crate::services::requests::{request_patch, set_token};
-use crate::types::auth::*;
+use crate::types::auth::{ApiResult, LoginInfo, RegisterInfo, RegisterResponse, UserInfo};
 
 /// Get current user info
 pub async fn current() -> Result<UserInfo, Error> {

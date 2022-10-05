@@ -22,11 +22,14 @@ lazy_static! {
 
 /// Set jwt token to local storage.
 pub fn set_token(token: Option<String>) {
-    if let Some(t) = token.clone() {
-        LocalStorage::set(TOKEN_KEY, t).expect("failed to set");
-    } else {
-        LocalStorage::delete(TOKEN_KEY);
-    }
+    token.clone().map_or_else(
+        || {
+            LocalStorage::delete(TOKEN_KEY);
+        },
+        |t| {
+            LocalStorage::set(TOKEN_KEY, t).expect("failed to set");
+        },
+    );
     let mut token_lock = TOKEN.write();
     *token_lock = token;
 }

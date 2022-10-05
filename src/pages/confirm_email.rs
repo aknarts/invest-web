@@ -2,11 +2,11 @@ use crate::error::Error;
 use crate::hooks::use_user_context;
 use crate::services::auth::confirm_email;
 use gloo::history::AnyHistory;
-use log::{debug, error};
+use log::debug;
 use serde::Deserialize;
 use yew::prelude::*;
 use yew::{html, Properties};
-use yew_hooks::{use_async, use_async_with_options, use_mount, UseAsyncHandle, UseAsyncOptions};
+use yew_hooks::{use_async, use_mount};
 use yew_router::history::{BrowserHistory, History};
 
 #[derive(Deserialize, Properties, Eq, PartialEq)]
@@ -19,7 +19,6 @@ enum Status {
     Unsent,
     Invalid,
     Bad,
-    Sent,
     Confirmed,
     Rejected,
 }
@@ -46,7 +45,6 @@ pub fn confirm() -> Html {
             },
             _ => None,
         };
-        error!("Got code {:?}", code);
         use_async(async move {
             if let Some(c) = code {
                 debug!("awaiting");
@@ -77,14 +75,12 @@ pub fn confirm() -> Html {
                 }
             }
 
-            if let Some(error) = &do_confirm.error {
-                if let Error::BadRequest = error {
-                    confirmation.set(Status::Bad);
-                }
+            if let Some(Error::BadRequest) = &do_confirm.error {
+                confirmation.set(Status::Bad);
             }
             || ()
         },
-        do_confirm.clone(),
+        do_confirm,
     );
 
     html! {
@@ -94,8 +90,7 @@ pub fn confirm() -> Html {
                     match confirmed {
                         Status::Bad => {{ "Invalid confirmation code. Email already verified?" }}
                         Status::Invalid => {{ "No confirmation code provided" }}
-                        Status::Unsent => {{ "Pending confirmation" }}
-                        Status::Sent => {{ "Waiting for confirmation" }}
+                        Status::Unsent => {{ "Waiting for confirmation" }}
                         Status::Confirmed => {{ "Email confirmed" }}
                         Status::Rejected => {{ "Error confirming the email" }}
                     }
