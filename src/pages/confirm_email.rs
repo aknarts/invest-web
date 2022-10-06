@@ -1,13 +1,16 @@
+use crate::app::Route;
 use crate::error::Error;
 use crate::hooks::use_user_context;
 use crate::services::auth::confirm_email;
 use gloo::history::AnyHistory;
+use gloo::timers::callback::Timeout;
 use log::debug;
 use serde::Deserialize;
 use yew::prelude::*;
 use yew::{html, Properties};
 use yew_hooks::{use_async, use_mount};
 use yew_router::history::{BrowserHistory, History};
+use yew_router::hooks::use_navigator;
 
 #[derive(Deserialize, Properties, Eq, PartialEq)]
 pub struct Props {
@@ -47,10 +50,8 @@ pub fn confirm() -> Html {
         };
         use_async(async move {
             if let Some(c) = code {
-                debug!("awaiting");
                 confirm_email(&c).await
             } else {
-                debug!("No code");
                 Err(Error::RequestError)
             }
         })
@@ -61,6 +62,7 @@ pub fn confirm() -> Html {
             do_confirm.run();
         });
     }
+    let history = use_navigator().unwrap();
 
     use_effect_with_deps(
         move |do_confirm| {
@@ -69,6 +71,10 @@ pub fn confirm() -> Html {
                 if r.result.eq("ok") {
                     user_ctx.validate_email(true);
                     confirmation.set(Status::Confirmed);
+                    let timeout = Timeout::new(10000, move || {
+                        history.push(&Route::Home);
+                    });
+                    timeout.forget();
                 } else {
                     user_ctx.validate_email(false);
                     confirmation.set(Status::Rejected);
