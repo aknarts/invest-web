@@ -84,7 +84,16 @@ where
                         }
                     }
                 }
-                403 => Err(Error::Forbidden),
+                403 => {
+                    let data: Result<ApiResult, _> = data.json::<ApiResult>().await;
+                    match data {
+                        Ok(d) => Err(Error::Forbidden(d.result)),
+                        Err(e) => {
+                            debug!("Failed to deserialize response: {e}");
+                            Err(Error::DeserializeError)
+                        }
+                    }
+                }
                 404 => Err(Error::NotFound),
                 409 => {
                     let data: Result<ApiResult, _> = data.json::<ApiResult>().await;
@@ -96,7 +105,16 @@ where
                         }
                     }
                 }
-                500 => Err(Error::InternalServerError),
+                500 => {
+                    let data: Result<ApiResult, _> = data.json::<ApiResult>().await;
+                    match data {
+                        Ok(d) => Err(Error::InternalServerError(d.result)),
+                        Err(e) => {
+                            debug!("Failed to deserialize response: {e}");
+                            Err(Error::InternalServerError(String::new()))
+                        }
+                    }
+                }
                 422 => {
                     let data: Result<ErrorInfo, _> = data.json::<ErrorInfo>().await;
                     if let Ok(data) = data {
