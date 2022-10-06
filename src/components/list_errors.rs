@@ -14,36 +14,11 @@ pub fn list_errors(props: &Props) -> Html {
         |error| {
             html! {
                 html! {
-                    <ul class="error-messages">
+                    <div class="notification is-danger is-light">
                         {
-                            match error {
-                                Error::UnprocessableEntity(error_info) => {
-                                    html! {
-                                        <>
-                                        {for error_info.errors.iter().map(|(key, value)| {
-                                            html! {
-                                                <li>
-                                                { key }
-                                                {for value.iter().map(|e| {
-                                                    html! {
-                                                        <>{" "} {e}</>
-                                                    }
-                                                })}
-                                                </li>
-                                            }
-                                        })}
-                                        </>
-                                    }
-                                }
-                                _ => {
-                                    html! {
-                                        <li>{error}</li>
-                                    }
-                                }
-
-                            }
+                             {error}
                         }
-                    </ul>
+                    </div>
                 }
             }
         },

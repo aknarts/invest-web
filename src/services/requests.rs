@@ -1,4 +1,5 @@
 use crate::error::Error;
+use crate::types::auth::ApiResult;
 use crate::types::ErrorInfo;
 use gloo::storage::{LocalStorage, Storage};
 use lazy_static::lazy_static;
@@ -73,9 +74,28 @@ where
         } else {
             match data.status().as_u16() {
                 400 => Err(Error::BadRequest),
-                401 => Err(Error::Unauthorized),
+                401 => {
+                    let data: Result<ApiResult, _> = data.json::<ApiResult>().await;
+                    match data {
+                        Ok(d) => Err(Error::Unauthorized(d.result)),
+                        Err(e) => {
+                            debug!("Failed to deserialize response: {e}");
+                            Err(Error::DeserializeError)
+                        }
+                    }
+                }
                 403 => Err(Error::Forbidden),
                 404 => Err(Error::NotFound),
+                409 => {
+                    let data: Result<ApiResult, _> = data.json::<ApiResult>().await;
+                    match data {
+                        Ok(d) => Err(Error::Conflict(d.result)),
+                        Err(e) => {
+                            debug!("Failed to deserialize response: {e}");
+                            Err(Error::DeserializeError)
+                        }
+                    }
+                }
                 500 => Err(Error::InternalServerError),
                 422 => {
                     let data: Result<ErrorInfo, _> = data.json::<ErrorInfo>().await;

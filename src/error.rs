@@ -11,8 +11,8 @@ pub enum Error {
     BadRequest,
 
     /// 401
-    #[error("Unauthorized")]
-    Unauthorized,
+    #[error("{0}")]
+    Unauthorized(String),
 
     /// 403
     #[error("Forbidden")]
@@ -21,6 +21,10 @@ pub enum Error {
     /// 404
     #[error("Not Found")]
     NotFound,
+
+    /// 409
+    #[error("{0}")]
+    Conflict(String),
 
     /// 422
     #[error("Unprocessable Entity: {0:?}")]
