@@ -103,6 +103,7 @@ pub fn use_user_context() -> Handle {
 #[hook]
 /// This hook is used to manage user context.
 pub fn use_refresh_user_context() -> UseStateHandle<UserInfo> {
+    #[allow(clippy::or_fun_call)]
     let user_ctx =
         use_context::<UseStateHandle<UserInfo>>().unwrap_or(use_state(UserInfo::default));
     let current_user = use_async(async move { current().await });
