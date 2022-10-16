@@ -34,7 +34,7 @@ pub fn header() -> Html {
         <>
             <nav class="navbar is-transparent is-fixed-top has-shadow" role="navigation" aria-label="main navigation">
                 <div class="navbar-brand">
-                    <Link<Route> to={Route::Home} classes="navbar-item is-size-3 h1">
+                    <Link<Route> to={Route::Home} classes="navbar-item is-size-3 has-text-weight-semibold">
                         { "Invest Web" }
                     </Link<Route>>
                     <button class={classes!("navbar-burger", "burger", active_class)}
@@ -112,20 +112,44 @@ fn logged_in_view(
     html! {
         <div class={classes!("navbar-menu", active_class)}>
             <div class="navbar-start">
-                <Link<Route> classes={classes!("navbar-item")} to={Route::Home}>
-                    { "Home" }
+                <Link<Route> classes={classes!("navbar-item")} to={Route::Overview}>
+                    { "Overview" }
                 </Link<Route>>
+                if user_info.check_permission("can_invest") {
+                    <Link<Route> classes={classes!("navbar-item")} to={Route::Invest}>
+                    { "Invest" }
+                    </Link<Route>>
+                }
+                if user_info.check_permission("can_invest") {
+                    <Link<Route> classes={classes!("navbar-item")} to={Route::Portfolio}>
+                    { "Portfolio" }
+                    </Link<Route>>
+                }
                 <hr class="navbar-divider"/>
             </div>
             <div class="navbar-end">
+                if user_info.check_permission("admin") {
+                    <Link<Route> classes={classes!("navbar-item")} to={Route::Admin}>
+                    { "Admin" }
+                    </Link<Route>>
+                }
                 <div class="navbar-item has-dropdown is-hoverable">
                     <a class="navbar-link">{ &user_info.username }</a>
-                    <div class="navbar-dropdown">
-                        <a class="navbar-item" {onclick}>
-                            { "Logout" }
-                        </a>
+                    <div class="navbar-dropdown is-right">
+                        <div class="navbar-item has-background-light">
+                            <div class="is-spaced">
+                                <p class="title is-6">{ &user_info.username }</p>
+                                <p class="subtitle is-7">{ &user_info.email }</p>
+                            </div>
+                        </div>
+                        <Link<Route> classes={classes!("navbar-item")} to={Route::Profile}>
+                        { "Profile" }
+                        </Link<Route>>
                     </div>
                 </div>
+                <a class="navbar-item" {onclick}>
+                    <i class="fa-solid fa-right-from-bracket"></i>
+                </a>
             </div>
         </div>
     }

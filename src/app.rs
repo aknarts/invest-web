@@ -1,10 +1,15 @@
 use crate::components::user_context_provider::UserContextProvider;
+use crate::pages::admin::Admin;
 use crate::pages::confirm_email::ConfirmEmail;
 use crate::pages::footer::Footer;
 use crate::pages::header::Header;
 use crate::pages::home::Home;
+use crate::pages::invest::Invest;
 use crate::pages::login::Login;
+use crate::pages::overview::Overview;
 use crate::pages::page_not_found::PageNotFound;
+use crate::pages::portfolio::Portfolio;
+use crate::pages::profile::Profile;
 use crate::pages::register::Register;
 use log::debug;
 use yew::html::Html;
@@ -24,6 +29,16 @@ pub enum Route {
     Register,
     #[at("/confirm_email")]
     ConfirmEmail,
+    #[at("/admin")]
+    Admin,
+    #[at("/overview")]
+    Overview,
+    #[at("/invest")]
+    Invest,
+    #[at("/portfolio")]
+    Portfolio,
+    #[at("/profile")]
+    Profile,
 }
 
 #[function_component(App)]
@@ -51,5 +66,10 @@ fn switch(routes: Route) -> Html {
         Route::Login => html! {<Login />},
         Route::Register => html! {<Register />},
         Route::ConfirmEmail => html! {<ConfirmEmail />},
+        Route::Admin => html! {<Admin />},
+        Route::Overview => html! {<Overview />},
+        Route::Invest => html! {<Invest />},
+        Route::Portfolio => html! {<Portfolio />},
+        Route::Profile => html! {<Profile />},
     }
 }
