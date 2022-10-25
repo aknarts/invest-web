@@ -14,7 +14,7 @@ pub fn list_errors(props: &Props) -> Html {
         |error| {
             html! {
                 html! {
-                    <div class="notification is-danger is-light">
+                    <div class="alert alert-warning">
                         {
                              {error}
                         }

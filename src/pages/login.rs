@@ -57,64 +57,64 @@ pub fn login() -> Html {
     };
 
     html! {
-        <div class="columns is-mobile is-centered">
-            <div class="column is-half">
-                <div class="box">
-                    <div class="tile is-child hero">
-                        <h1 class="title is-1">{ "Sign In" }</h1>
-                        <p class="subtitle">
-                            <Link<Route> to={Route::Register}>
-                                { "Need an account?" }
-                            </Link<Route>>
-                        </p>
-                    </div>
-                    <div class="tile is-child">
-                        <ListErrors error={user_login.error.clone()} />
-                        <form {onsubmit}>
-                            <fieldset>
-                                <div class="field">
-                                    <div class="control has-icons-left">
-                                        <input
-                                            class="input"
-                                            type="text"
-                                            placeholder="Username"
-                                            autocomplete="username"
-                                            value={login_info.username.clone()}
-                                            oninput={oninput_username}
-                                            />
-                                        <span class="icon is-small is-left">
-                                          <i class="fas fa-user"></i>
-                                        </span>
-                                    </div>
+        <div class="card align-self-center flex-fill shadow rounded">
+            <div class="card-header d-flex">
+                <h2 class="card-title p-2 flex-grow-1">{ "Sign In" }</h2>
+                <span class="card-subtitle align-self-center">
+                    <Link<Route> to={Route::Register} classes="btn btn-secondary">
+                        { "Need an account?" }
+                    </Link<Route>>
+                </span>
+            </div>
+            <div class="card-body">
+                <div class="card-text">
+                    <ListErrors error={user_login.error.clone()} />
+                    <form {onsubmit}>
+                        <fieldset>
+                            <div class="input-group mb-2">
+                                <span class="input-group-text">
+                                  <i class="fas fa-user"></i>
+                                </span>
+                                <div class="form-floating">
+                                    <input
+                                        class="form-control"
+                                        type="text"
+                                        id="usernameGroup"
+                                        placeholder="Username"
+                                        autocomplete="username"
+                                        value={login_info.username.clone()}
+                                        oninput={oninput_username}
+                                        />
+                                    <label for="usernameGroup">{"Username"}</label>
                                 </div>
-                                <div class="field">
-                                    <div class="control has-icons-left">
-                                        <input
-                                            class="input"
-                                            type="password"
-                                            placeholder="Password"
-                                            autocomplete="current_password"
-                                            value={login_info.password.clone()}
-                                            oninput={oninput_password}
-                                            />
-                                        <span class="icon is-small is-left">
-                                          <i class="fas fa-lock"></i>
-                                        </span>
-                                    </div>
+                            </div>
+                            <div class="input-group mb-2">
+                                <span class="input-group-text">
+                                  <i class="fas fa-lock"></i>
+                                </span>
+                                <div class="form-floating">
+                                    <input
+                                        class="form-control"
+                                        type="password"
+                                        placeholder="Password"
+                                        id="passwordGroup"
+                                        autocomplete="current_password"
+                                        value={login_info.password.clone()}
+                                        oninput={oninput_password}
+                                        />
+                                    <label for="passwordGroup">{"Password"}</label>
                                 </div>
-                                <div class="field is-grouped is-grouped-right">
-                                    <div class="control">
-                                        <button
-                                            class="button is-success"
-                                            type="submit"
-                                            disabled=false>
-                                            { "Sign in" }
-                                        </button>
-                                    </div>
-                                </div>
-                            </fieldset>
-                        </form>
-                    </div>
+                            </div>
+                            <div class="d-flex justify-content-end">
+                                <button
+                                    class="btn btn-primary mb-2"
+                                    type="submit"
+                                    disabled=false>
+                                    { "Sign in" }
+                                </button>
+                            </div>
+                        </fieldset>
+                    </form>
                 </div>
             </div>
         </div>

@@ -64,80 +64,81 @@ pub fn register() -> Html {
     };
 
     html! {
-        <div class="columns is-mobile is-centered">
-            <div class="column is-half">
-                <div class="box">
-                    <div class="tile is-child hero">
-                        <h1 class="title is-1">{ "Sign Up" }</h1>
-                        <p class="subtitle">
-                            <Link<Route> to={Route::Login}>
-                                { "Have an account?" }
-                            </Link<Route>>
-                        </p>
-                    </div>
-                    <div class="tile is-child">
-                        <ListErrors error={user_register.error.clone()} />
-                        <form {onsubmit}>
-                            <fieldset>
-                                <div class="field">
-                                    <div class="control has-icons-left">
+        <div class="card shadow align-self-center flex-fill rounded">
+            <div class="card-header d-flex">
+                <h2 class="card-title p-2 flex-grow-1">{ "Sign Up" }</h2>
+                <span class="card-subtitle align-self-center">
+                    <Link<Route> to={Route::Login} classes="btn btn-secondary">
+                        { "Have an account?" }
+                    </Link<Route>>
+                </span>
+            </div>
+            <div class="card-body">
+                <div class="card-text">
+                    <ListErrors error={user_register.error.clone()} />
+                    <form {onsubmit}>
+                        <fieldset>
+                            <div class="input-group mb-2">
+                                <span class="input-group-text">
+                                  <i class="fas fa-user"></i>
+                                </span>
+                                <div class="form-floating">
                                     <input
-                                        class="input"
+                                        class="form-control"
                                         type="text"
+                                        id="usernameGroup"
                                         placeholder="Username"
                                         autocomplete="username"
                                         value={register_info.username.clone()}
                                         oninput={oninput_username}
                                         />
-                                        <span class="icon is-small is-left">
-                                          <i class="fas fa-user"></i>
-                                        </span>
-                                    </div>
+                                    <label for="usernameGroup">{"Username"}</label>
                                 </div>
-                                <div class="field">
-                                    <div class="control has-icons-left">
+                            </div>
+                            <div class="input-group mb-2">
+                                <span class="input-group-text">
+                                  <i class="fas fa-envelope"></i>
+                                </span>
+                                <div class="form-floating">
                                     <input
-                                        class="input"
+                                        class="form-control"
                                         type="email"
+                                        id="emailGroup"
                                         placeholder="Email"
                                         autocomplete="email"
                                         value={register_info.email.clone()}
                                         oninput={oninput_email}
                                         />
-                                        <span class="icon is-small is-left">
-                                          <i class="fas fa-envelope"></i>
-                                        </span>
-                                    </div>
+                                    <label for="emailGroup">{"Email"}</label>
                                 </div>
-                                <div class="field">
-                                    <div class="control has-icons-left">
+                            </div>
+                            <div class="input-group mb-2">
+                                <span class="input-group-text">
+                                  <i class="fas fa-lock"></i>
+                                </span>
+                                <div class="form-floating">
                                     <input
-                                        class="input"
+                                        class="form-control"
                                         type="password"
                                         placeholder="Password"
+                                        id="passwordGroup"
                                         autocomplete="new_password"
                                         value={register_info.password.clone()}
                                         oninput={oninput_password}
                                         />
-                                        <span class="icon is-small is-left">
-                                          <i class="fas fa-lock"></i>
-                                        </span>
-
-                                    </div>
+                                    <label for="passwordGroup">{"Password"}</label>
                                 </div>
-                                <div class="field is-grouped is-grouped-right">
-                                    <div class="control">
-                                        <button
-                                            class="button is-success"
-                                            type="submit"
-                                            disabled=false>
-                                            { "Sign up" }
-                                        </button>
-                                    </div>
-                                </div>
-                            </fieldset>
-                        </form>
-                    </div>
+                            </div>
+                            <div class="d-flex justify-content-end">
+                                <button
+                                    class="btn btn-primary mb-2"
+                                    type="submit"
+                                    disabled=false>
+                                    { "Sign up" }
+                                </button>
+                            </div>
+                        </fieldset>
+                    </form>
                 </div>
             </div>
         </div>

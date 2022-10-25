@@ -10,10 +10,16 @@ use crate::types::auth::ApiResult;
 #[function_component(Header)]
 pub fn header() -> Html {
     let user_ctx = use_user_context();
-    let active = use_state(|| true);
+    let active = use_state(|| false);
     let resent = use_state(|| true);
+    let dropdown = use_state(|| false);
 
-    let active_class = if *active { "" } else { "is-active" };
+    let active_class = if *active {
+        (Some("show"), None)
+    } else {
+        (None, Some("collapsed"))
+    };
+    let activated = *active.clone();
 
     let onclick = { Callback::from(move |_| active.set(!*active)) };
 
@@ -32,30 +38,27 @@ pub fn header() -> Html {
 
     html! {
         <>
-            <nav class="navbar is-transparent is-fixed-top has-shadow" role="navigation" aria-label="main navigation">
-                <div class="navbar-brand">
-                    <Link<Route> to={Route::Home} classes="navbar-item is-size-3 has-text-weight-semibold">
+            <nav class="navbar navbar-expand-lg sticky-top shadow bg-light" role="navigation" aria-label="main navigation">
+                <div class="container-fluid">
+                    <Link<Route> to={Route::Home} classes="navbar-brand fs-2">
                         { "Invest Web" }
                     </Link<Route>>
-                    <button class={classes!("navbar-burger", "burger", active_class)}
-                            aria-label="menu" aria-expanded="false"
-                            {onclick}
-                        >
-                            <span aria-hidden="true"></span>
-                            <span aria-hidden="true"></span>
-                            <span aria-hidden="true"></span>
+                    <button class={classes!("navbar-toggler", active_class.1)} type="button" {onclick} aria-controls="navbarSupportedContent" aria-expanded={(!activated).to_string()} aria-label="Toggle navigation">
+                      <span class="navbar-toggler-icon"></span>
                     </button>
-                </div>
-                {
-                    if user_ctx.is_authenticated() {
-                        logged_in_view(&user_ctx, active_class.to_string(), logout)
-                    } else {
-                        logged_out_view(active_class.to_string())
+                    <div class={classes!("collapse","navbar-collapse", active_class.0)} id="navbarSupportedContent">
+                    {
+                        if user_ctx.is_authenticated() {
+                            logged_in_view(&user_ctx, logout, dropdown)
+                        } else {
+                            logged_out_view()
+                        }
                     }
-                }
+                    </div>
+                </div>
             </nav>
             if !user_ctx.email_valid && user_ctx.is_authenticated() && show_resend_notification {
-                <div class="notification is-warning">
+                <div class="alert alert-warning">
                     { "Email not verified please verify it. " }
                     <a onclick={resend}>
                         { "Resend verification email." }
@@ -66,39 +69,40 @@ pub fn header() -> Html {
     }
 }
 
-fn logged_out_view(active_class: String) -> Html {
+fn logged_out_view() -> Html {
     html! {
-        <div class={classes!("navbar-menu", active_class)}>
-            <div class="navbar-start">
-                <Link<Route> classes={classes!("navbar-item")} to={Route::Home}>
-                    { "Home" }
-                </Link<Route>>
-            <hr class="navbar-divider"/>
-            </div>
-            <div class="navbar-end">
-                <div class="navbar-item">
-                    <div class="field is-grouped">
-                        <p class="control">
-                            <Link<Route> classes={classes!("button", "is-light")} to={Route::Login}>
+        <>
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                <li class="nav-item">
+                    <Link<Route> classes={classes!("nav-link")} to={Route::Home}>
+                        { "Home" }
+                    </Link<Route>>
+                </li>
+            </ul>
+            <ul class="navbar-nav mb-2 mb-lg-0">
+                <li class="nav-item">
+                    <div class="btn-toolbar" role="toolbar" aria-label="Login and registration buttons">
+                        <div class="btn-group me-2" role="group" aria-label="Login button group">
+                            <Link<Route> classes={classes!("btn", "btn-success")} to={Route::Login}>
                                 { "Login" }
                             </Link<Route>>
-                        </p>
-                        <p class="control">
-                            <Link<Route> classes={classes!("button", "is-primary")} to={Route::Register}>
+                        </div>
+                        <div class="btn-group me-2" role="group" aria-label="Registration button group">
+                            <Link<Route> classes={classes!("btn", "btn-primary")} to={Route::Register}>
                                 { "Register" }
                             </Link<Route>>
-                        </p>
+                        </div>
                     </div>
-                </div>
-            </div>
-        </div>
+                </li>
+            </ul>
+        </>
     }
 }
 
 fn logged_in_view(
     user_info: &crate::hooks::Handle,
-    active_class: String,
     logout: UseAsyncHandle<ApiResult, Error>,
+    dropdown: UseStateHandle<bool>,
 ) -> Html {
     let user_ctx = user_info.clone();
     let onclick = {
@@ -109,48 +113,83 @@ fn logged_in_view(
         })
     };
 
+    let show = if *dropdown { Some("show") } else { None };
+    let dropped = *dropdown.clone();
+
+    let drop = {
+        Callback::from(move |_| {
+            dropdown.set(!*dropdown);
+        })
+    };
+
     html! {
-        <div class={classes!("navbar-menu", active_class)}>
-            <div class="navbar-start">
-                <Link<Route> classes={classes!("navbar-item")} to={Route::Overview}>
-                    { "Overview" }
-                </Link<Route>>
+        <>
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                <li class="nav-item">
+                    <Link<Route> classes={classes!("nav-link")} to={Route::Overview}>
+                        { "Overview" }
+                    </Link<Route>>
+                </li>
                 if user_info.check_permission("can_invest") {
-                    <Link<Route> classes={classes!("navbar-item")} to={Route::Invest}>
-                    { "Invest" }
-                    </Link<Route>>
-                }
-                if user_info.check_permission("can_invest") {
-                    <Link<Route> classes={classes!("navbar-item")} to={Route::Portfolio}>
-                    { "Portfolio" }
-                    </Link<Route>>
-                }
-                <hr class="navbar-divider"/>
-            </div>
-            <div class="navbar-end">
-                if user_info.check_permission("admin") {
-                    <Link<Route> classes={classes!("navbar-item")} to={Route::Admin}>
-                    { "Admin" }
-                    </Link<Route>>
-                }
-                <div class="navbar-item has-dropdown is-hoverable">
-                    <a class="navbar-link">{ &user_info.username }</a>
-                    <div class="navbar-dropdown is-right">
-                        <div class="navbar-item has-background-light">
-                            <div class="is-spaced">
-                                <p class="title is-6">{ &user_info.username }</p>
-                                <p class="subtitle is-7">{ &user_info.email }</p>
-                            </div>
-                        </div>
-                        <Link<Route> classes={classes!("navbar-item")} to={Route::Profile}>
-                        { "Profile" }
+                    <li class="nav-item">
+                        <Link<Route> classes={classes!("nav-link")} to={Route::Invest}>
+                        { "Invest" }
                         </Link<Route>>
-                    </div>
-                </div>
-                <a class="navbar-item" {onclick}>
-                    <i class="fa-solid fa-right-from-bracket"></i>
-                </a>
-            </div>
-        </div>
+                    </li>
+                }
+                if user_info.check_permission("can_invest") {
+                    <li class="nav-item">
+                        <Link<Route> classes={classes!("nav-link")} to={Route::Portfolio}>
+                        { "Portfolio" }
+                        </Link<Route>>
+                    </li>
+                }
+            </ul>
+            <ul class="navbar-nav mb-2 mb-lg-0">
+                if user_info.check_permission("admin") {
+                    <li class="nav-item">
+                        <Link<Route> classes={classes!("nav-link")} to={Route::Admin}>
+                        { "Admin" }
+                        </Link<Route>>
+                    </li>
+                }
+                <li class="nav-item dropdown">
+                    <a class={classes!("nav-link", "dropdown-toggle", show)} href="#" role="button" onclick={drop} data-bs-toggle="dropdown" aria-expanded={
+                            if dropped {
+                                {"true"}
+                            } else {
+                                {"false"}
+                            }
+                        }>
+                        { &user_info.username }
+                    </a>
+                    <ul class={classes!("dropdown-menu", "dropdown-menu-end", show)} style="position: absolute; inset: 0px 0px auto auto; margin: 0px; transform: translate(0px, 40px);">
+                        <li>
+                            <span class="dropdown-item-text">{ &user_info.username }</span>
+
+                        </li>
+                        <li>
+                            <span class="dropdown-item-text text-muted">{ &user_info.email }</span>
+                        </li>
+                        <li><hr class="dropdown-divider" /></li>
+                        // <div class="navbar-item has-background-light">
+                        //     <div class="is-spaced">
+
+                        //     </div>
+                        // </div>
+                        <li>
+                            <Link<Route> classes={classes!("dropdown-item")} to={Route::Profile}>
+                            { "Profile" }
+                            </Link<Route>>
+                        </li>
+                    </ul>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" {onclick}>
+                        <i class="fa-solid fa-right-from-bracket"></i>
+                    </a>
+                </li>
+            </ul>
+        </>
     }
 }

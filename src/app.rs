@@ -42,14 +42,16 @@ pub enum Route {
 }
 
 #[function_component(App)]
-pub fn user_context_provider() -> Html {
+pub fn app() -> Html {
     html! {
         <UserContextProvider>
             <BrowserRouter>
                 <Header />
-                <main class="section is-large">
-                    <Switch<Route> render={switch} />
-                </main>
+                <div class="d-flex p-2 flex-grow-1">
+                    <main class="container-sm d-flex">
+                        <Switch<Route> render={switch} />
+                    </main>
+                </div>
                 <Footer />
             </BrowserRouter>
         </UserContextProvider>
