@@ -1,11 +1,11 @@
-use yew::prelude::*;
-use yew_hooks::{use_async, UseAsyncHandle};
-use yew_router::prelude::*;
-
 use crate::app::Route;
 use crate::error::Error;
 use crate::hooks::use_user_context;
 use crate::types::auth::ApiResult;
+use std::collections::HashMap;
+use yew::prelude::*;
+use yew_hooks::{use_async, UseAsyncHandle};
+use yew_router::prelude::*;
 
 #[function_component(Header)]
 pub fn header() -> Html {
@@ -13,6 +13,8 @@ pub fn header() -> Html {
     let active = use_state(|| false);
     let resent = use_state(|| true);
     let dropdown = use_state(|| false);
+    let location = use_location().unwrap();
+    let route = Route::from_path(location.path(), &HashMap::new());
 
     let active_class = if *active {
         (Some("show"), None)
@@ -49,9 +51,9 @@ pub fn header() -> Html {
                     <div class={classes!("collapse","navbar-collapse", active_class.0)} id="navbarSupportedContent">
                     {
                         if user_ctx.is_authenticated() {
-                            logged_in_view(&user_ctx, logout, dropdown)
+                            logged_in_view(&user_ctx, logout, dropdown, route)
                         } else {
-                            logged_out_view()
+                            logged_out_view(route)
                         }
                     }
                     </div>
@@ -69,12 +71,12 @@ pub fn header() -> Html {
     }
 }
 
-fn logged_out_view() -> Html {
+fn logged_out_view(route: Option<Route>) -> Html {
     html! {
         <>
             <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                 <li class="nav-item">
-                    <Link<Route> classes={classes!("nav-link")} to={Route::Home}>
+                    <Link<Route> classes={classes!("nav-link" , is_active(&route, vec!(Route::Home)))} to={Route::Home}>
                         { "Home" }
                     </Link<Route>>
                 </li>
@@ -103,6 +105,7 @@ fn logged_in_view(
     user_info: &crate::hooks::Handle,
     logout: UseAsyncHandle<ApiResult, Error>,
     dropdown: UseStateHandle<bool>,
+    route: Option<Route>,
 ) -> Html {
     let user_ctx = user_info.clone();
     let onclick = {
@@ -126,20 +129,20 @@ fn logged_in_view(
         <>
             <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                 <li class="nav-item">
-                    <Link<Route> classes={classes!("nav-link")} to={Route::Overview}>
+                    <Link<Route> classes={classes!("nav-link", is_active(&route, vec!(Route::Overview)))} to={Route::Overview}>
                         { "Overview" }
                     </Link<Route>>
                 </li>
                 if user_info.check_permission("can_invest") {
                     <li class="nav-item">
-                        <Link<Route> classes={classes!("nav-link")} to={Route::Invest}>
+                        <Link<Route> classes={classes!("nav-link", is_active(&route, vec!(Route::Invest)))} to={Route::Invest}>
                         { "Invest" }
                         </Link<Route>>
                     </li>
                 }
                 if user_info.check_permission("can_invest") {
                     <li class="nav-item">
-                        <Link<Route> classes={classes!("nav-link")} to={Route::Portfolio}>
+                        <Link<Route> classes={classes!("nav-link", is_active(&route, vec!(Route::Portfolio)))} to={Route::Portfolio}>
                         { "Portfolio" }
                         </Link<Route>>
                     </li>
@@ -148,13 +151,13 @@ fn logged_in_view(
             <ul class="navbar-nav mb-2 mb-lg-0">
                 if user_info.check_permission("admin") {
                     <li class="nav-item">
-                        <Link<Route> classes={classes!("nav-link")} to={Route::Admin}>
+                        <Link<Route> classes={classes!("nav-link", is_active(&route, vec!(Route::AdminRoot)))} to={Route::AdminRoot}>
                         { "Admin" }
                         </Link<Route>>
                     </li>
                 }
                 <li class="nav-item dropdown">
-                    <a class={classes!("nav-link", "dropdown-toggle", show)} href="#" role="button" onclick={drop} data-bs-toggle="dropdown" aria-expanded={
+                    <span class={classes!("nav-link", "dropdown-toggle", show)} role="button" onclick={drop} aria-expanded={
                             if dropped {
                                 {"true"}
                             } else {
@@ -162,21 +165,15 @@ fn logged_in_view(
                             }
                         }>
                         { &user_info.username }
-                    </a>
+                    </span>
                     <ul class={classes!("dropdown-menu", "dropdown-menu-end", show)} style="position: absolute; inset: 0px 0px auto auto; margin: 0px; transform: translate(0px, 40px);">
                         <li>
                             <span class="dropdown-item-text">{ &user_info.username }</span>
-
                         </li>
                         <li>
                             <span class="dropdown-item-text text-muted">{ &user_info.email }</span>
                         </li>
                         <li><hr class="dropdown-divider" /></li>
-                        // <div class="navbar-item has-background-light">
-                        //     <div class="is-spaced">
-
-                        //     </div>
-                        // </div>
                         <li>
                             <Link<Route> classes={classes!("dropdown-item")} to={Route::Profile}>
                             { "Profile" }
@@ -191,5 +188,18 @@ fn logged_in_view(
                 </li>
             </ul>
         </>
+    }
+}
+
+fn is_active(route: &Option<Route>, desired: Vec<Route>) -> Option<String> {
+    match route {
+        None => None,
+        Some(r) => {
+            if desired.contains(r) {
+                Some("active".to_string())
+            } else {
+                None
+            }
+        }
     }
 }

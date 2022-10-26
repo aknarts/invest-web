@@ -1,5 +1,5 @@
 use crate::components::user_context_provider::UserContextProvider;
-use crate::pages::admin::Admin;
+use crate::pages::admin::AdminRoute;
 use crate::pages::confirm_email::ConfirmEmail;
 use crate::pages::footer::Footer;
 use crate::pages::header::Header;
@@ -30,6 +30,8 @@ pub enum Route {
     #[at("/confirm_email")]
     ConfirmEmail,
     #[at("/admin")]
+    AdminRoot,
+    #[at("/admin/*")]
     Admin,
     #[at("/overview")]
     Overview,
@@ -68,7 +70,9 @@ fn switch(routes: Route) -> Html {
         Route::Login => html! {<Login />},
         Route::Register => html! {<Register />},
         Route::ConfirmEmail => html! {<ConfirmEmail />},
-        Route::Admin => html! {<Admin />},
+        Route::Admin | Route::AdminRoot => {
+            html! {<Switch<AdminRoute> render={crate::pages::admin::switch_admin} />}
+        }
         Route::Overview => html! {<Overview />},
         Route::Invest => html! {<Invest />},
         Route::Portfolio => html! {<Portfolio />},
