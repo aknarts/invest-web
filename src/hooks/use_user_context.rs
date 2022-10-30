@@ -36,6 +36,10 @@ impl Handle {
         false
     }
 
+    pub fn navigate_to(&self, route: &Route) {
+        self.history.push(route);
+    }
+
     pub fn register(&self, value: RegisterResponse) {
         // Set global token after logged in
         if let Some(data) = value.data {
