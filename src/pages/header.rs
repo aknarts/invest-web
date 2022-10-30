@@ -21,7 +21,7 @@ pub fn header() -> Html {
     } else {
         (None, Some("collapsed"))
     };
-    let activated = *active.clone();
+    let activated = *active;
 
     let onclick = { Callback::from(move |_| active.set(!*active)) };
 
@@ -51,9 +51,9 @@ pub fn header() -> Html {
                     <div class={classes!("collapse","navbar-collapse", active_class.0)} id="navbarSupportedContent">
                     {
                         if user_ctx.is_authenticated() {
-                            logged_in_view(&user_ctx, logout, dropdown, route)
+                            logged_in_view(&user_ctx, logout, dropdown, &route)
                         } else {
-                            logged_out_view(route)
+                            logged_out_view(&route)
                         }
                     }
                     </div>
@@ -71,12 +71,12 @@ pub fn header() -> Html {
     }
 }
 
-fn logged_out_view(route: Option<Route>) -> Html {
+fn logged_out_view(route: &Option<Route>) -> Html {
     html! {
         <>
             <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                 <li class="nav-item">
-                    <Link<Route> classes={classes!("nav-link" , is_active(&route, vec!(Route::Home)))} to={Route::Home}>
+                    <Link<Route> classes={classes!("nav-link" , is_active(route, &[Route::Home]))} to={Route::Home}>
                         { "Home" }
                     </Link<Route>>
                 </li>
@@ -105,7 +105,7 @@ fn logged_in_view(
     user_info: &crate::hooks::Handle,
     logout: UseAsyncHandle<ApiResult, Error>,
     dropdown: UseStateHandle<bool>,
-    route: Option<Route>,
+    route: &Option<Route>,
 ) -> Html {
     let user_ctx = user_info.clone();
     let onclick = {
@@ -117,7 +117,7 @@ fn logged_in_view(
     };
 
     let show = if *dropdown { Some("show") } else { None };
-    let dropped = *dropdown.clone();
+    let dropped = *dropdown;
 
     let drop = {
         Callback::from(move |_| {
@@ -129,20 +129,20 @@ fn logged_in_view(
         <>
             <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                 <li class="nav-item">
-                    <Link<Route> classes={classes!("nav-link", is_active(&route, vec!(Route::Overview)))} to={Route::Overview}>
+                    <Link<Route> classes={classes!("nav-link", is_active(route, &[Route::Overview]))} to={Route::Overview}>
                         { "Overview" }
                     </Link<Route>>
                 </li>
                 if user_info.check_permission("can_invest") {
                     <li class="nav-item">
-                        <Link<Route> classes={classes!("nav-link", is_active(&route, vec!(Route::Invest)))} to={Route::Invest}>
+                        <Link<Route> classes={classes!("nav-link", is_active(route, &[Route::Invest]))} to={Route::Invest}>
                         { "Invest" }
                         </Link<Route>>
                     </li>
                 }
                 if user_info.check_permission("can_invest") {
                     <li class="nav-item">
-                        <Link<Route> classes={classes!("nav-link", is_active(&route, vec!(Route::Portfolio)))} to={Route::Portfolio}>
+                        <Link<Route> classes={classes!("nav-link", is_active(route, &[Route::Portfolio]))} to={Route::Portfolio}>
                         { "Portfolio" }
                         </Link<Route>>
                     </li>
@@ -151,7 +151,7 @@ fn logged_in_view(
             <ul class="navbar-nav mb-2 mb-lg-0">
                 if user_info.check_permission("admin") {
                     <li class="nav-item">
-                        <Link<Route> classes={classes!("nav-link", is_active(&route, vec!(Route::AdminRoot)))} to={Route::AdminRoot}>
+                        <Link<Route> classes={classes!("nav-link", is_active(route, &[Route::AdminRoot]))} to={Route::AdminRoot}>
                         { "Admin" }
                         </Link<Route>>
                     </li>
@@ -191,7 +191,7 @@ fn logged_in_view(
     }
 }
 
-fn is_active(route: &Option<Route>, desired: Vec<Route>) -> Option<String> {
+fn is_active(route: &Option<Route>, desired: &[Route]) -> Option<String> {
     match route {
         None => None,
         Some(r) => {

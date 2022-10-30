@@ -8,7 +8,8 @@ use users::Users;
 use yew::prelude::*;
 use yew_router::prelude::*;
 
-#[derive(Clone, Routable, PartialEq)]
+#[allow(clippy::module_name_repetitions)]
+#[derive(Clone, Routable, Eq, PartialEq)]
 pub enum AdminRoute {
     #[at("/admin")]
     Default,
@@ -20,6 +21,8 @@ pub enum AdminRoute {
     Investments,
 }
 
+#[allow(clippy::module_name_repetitions)]
+#[allow(clippy::needless_pass_by_value)]
 pub fn switch_admin(route: AdminRoute) -> Html {
     html! {
         <div class="grid flex-fill">
@@ -27,13 +30,13 @@ pub fn switch_admin(route: AdminRoute) -> Html {
                 <h1 class="title is-1">{ "Admin" }</h1>
                 <ul class="nav nav-tabs">
                   <li class="nav-item">
-                    <Link<AdminRoute> classes={classes!("nav-link", is_active(&route, vec![AdminRoute::Default, AdminRoute::Users]))} to={AdminRoute::Users}>{ "Users" }</Link<AdminRoute>>
+                    <Link<AdminRoute> classes={classes!("nav-link", is_active(&route, &[AdminRoute::Default, AdminRoute::Users]))} to={AdminRoute::Users}>{ "Users" }</Link<AdminRoute>>
                   </li>
                   <li class="nav-item">
-                    <Link<AdminRoute> classes={classes!("nav-link", is_active(&route, vec![AdminRoute::Roles]))} to={AdminRoute::Roles}>{ "Roles" }</Link<AdminRoute>>
+                    <Link<AdminRoute> classes={classes!("nav-link", is_active(&route, &[AdminRoute::Roles]))} to={AdminRoute::Roles}>{ "Roles" }</Link<AdminRoute>>
                   </li>
                   <li class="nav-item">
-                    <Link<AdminRoute> classes={classes!("nav-link", is_active(&route, vec![AdminRoute::Investments]))} to={AdminRoute::Investments}>{ "Investments" }</Link<AdminRoute>>
+                    <Link<AdminRoute> classes={classes!("nav-link", is_active(&route, &[AdminRoute::Investments]))} to={AdminRoute::Investments}>{ "Investments" }</Link<AdminRoute>>
                   </li>
                 </ul>
                 {route_match(&route)}
@@ -42,7 +45,7 @@ pub fn switch_admin(route: AdminRoute) -> Html {
     }
 }
 
-fn is_active(route: &AdminRoute, desired: Vec<AdminRoute>) -> Option<String> {
+fn is_active(route: &AdminRoute, desired: &[AdminRoute]) -> Option<String> {
     if desired.contains(route) {
         Some("active".to_string())
     } else {

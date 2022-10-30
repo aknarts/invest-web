@@ -1,78 +1,75 @@
-use std::future::Future;
-use log::warn;
-use yew::prelude::*;
-use yew::suspense::{Suspension, SuspensionResult};
-use yew_hooks::{use_async, use_mount};
 use crate::error::Error;
 use crate::services::admin::{get_user_list, User};
-use crate::services::requests::get_token;
-
+use log::debug;
+use yew::prelude::*;
+use yew::suspense::{use_future, SuspensionResult, UseFutureHandle};
 
 #[hook]
-fn use_user_list() -> SuspensionResult<Vec<User>> {
-    let list_users = use_async(async move { get_user_list().await });
-    let data_handle = use_state(
-        || {
-            let (s, handle) = Suspension::new();
-            (Err(s), Some(handle))
-        }
-    );
-    let users = vec!{};
-    let users = use_state(|| vec![]);
-    {
-        let list_users = list_users.clone();
-        use_mount(move || {
-            if get_token().is_some() {
-                list_users.run();
-            }
-        });
-    }
-
-    {
-        let user_ctx = user_ctx.clone();
-        let users = users.clone();
-        let data_handle = data_handle.clone();
-        use_effect_with_deps(
-            move |list_users| {
-
-                if let Some(users) = &list_users.data {
-
-                }
-
-                if let Some(error) = &list_users.error {
-                    if let Error::Unauthorized(s) | Error::Forbidden(s) = error {
-                        warn!("Unauthorized {s}");
-                    }
-                    handle.resume();
-                    Err(s);
-                }
-                || {
-                    handle.resume();
-                    Err(s);
-                }
-            },
-            list_users,
-        );
-    };
+fn use_user_list() -> SuspensionResult<UseFutureHandle<Result<Vec<User>, Error>>> {
+    use_future(|| async move { get_user_list().await })
 }
 
+#[function_component(UserList)]
+pub fn user_list() -> HtmlResult {
+    let res = use_user_list()?;
+    let html_result = match *res {
+        Ok(ref list) => {
+            html! {
+                <section class="grid flex-fill border-end border-start border-bottom">
+                    <div>
+                        <table class="table table-hover">
+                          <thead>
+                            <tr>
+                              <th scope="col">{"#"}</th>
+                              <th scope="col">{"Username"}</th>
+                              <th scope="col">{"Email"}</th>
+                              <th scope="col">{"Actions"}</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {
+                                for list.iter().map(|user| {user_line(user)})
+                            }
+                          </tbody>
+                        </table>
+                    </div>
+                </section>
+            }
+        }
+        Err(ref e) => {
+            match e {
+                Error::Unauthorized(s) | Error::Forbidden(s) => {
+                    debug!("Authorization issue: {}", s);
+                }
+                _ => {
+                    debug!("Failed to complete request: {e}");
+                }
+            };
+            html!(500)
+        }
+    };
+    Ok(html_result)
+}
+
+fn user_line(user: &User) -> Html {
+    html!(
+        <tr>
+          <th scope="row">{&user.id}</th>
+          <td>{&user.username}</td>
+          <td>{&user.email}</td>
+          <td></td>
+        </tr>
+    )
+}
 
 #[function_component(Users)]
 pub fn users() -> Html {
+    let fallback = html! {<div>{"Loading..."}</div>};
     html! {
         <section class="grid flex-fill border-end border-start border-bottom">
-            <div>
-                <table class="table table-hover">
-                  <thead>
-                    <tr>
-                      <th scope="col">{"#"}</th>
-                      <th scope="col">{"Username"}</th>
-                      <th scope="col">{"Email"}</th>
-                      <th scope="col">{"Actions"}</th>
-                    </tr>
-                  </thead>
-                </table>
-            </div>
+            <Suspense {fallback}>
+                <UserList />
+            </Suspense>
         </section>
     }
 }
