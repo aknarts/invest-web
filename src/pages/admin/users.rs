@@ -59,7 +59,7 @@ fn user_line(user: &User) -> Html {
           <th scope="row">{&user.id}</th>
           <td>{&user.username}</td>
           <td>{&user.email}</td>
-          <td></td>
+          <td><button type="button" class="btn btn-primary mx-1">{ "Details" }</button></td>
         </tr>
     )
 }

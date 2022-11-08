@@ -34,6 +34,9 @@ pub fn role_list() -> HtmlResult {
                         }
                       </tbody>
                     </table>
+                    <div class="d-flex flex-row-reverse">
+                        <button type="button" class="btn btn-success">{ "Add Role" }</button>
+                    </div>
                 </div>
             }
         }
@@ -59,7 +62,7 @@ fn role_line(role: &Role) -> Html {
           <th scope="row">{&role.id}</th>
           <td>{&role.name}</td>
           <td>{&role.description}</td>
-          <td></td>
+          <td><button type="button" class="btn btn-primary mx-1">{ "Edit" }</button><button type="button" class="btn btn-danger mx-1">{"Remove"}</button></td>
         </tr>
     )
 }
