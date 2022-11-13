@@ -67,7 +67,7 @@ fn role_line(role: &Role) -> Html {
     )
 }
 
-#[derive(Clone, Debug, Default, PartialEq)]
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct RoleInfo {
     name: String,
     permission: HashSet<String>,
@@ -127,10 +127,7 @@ pub fn create_role() -> Html {
         </div>
     };
 
-    let search: Option<String> = match &*search_term {
-        Some(s) => Some(s.clone()),
-        None => None,
-    };
+    let search = (*search_term).as_ref().cloned();
 
     let info = (*role_info).clone();
 
@@ -145,7 +142,6 @@ pub fn create_role() -> Html {
     };
 
     let oninput_permission = {
-        let role_info = role_info.clone();
         Callback::from(move |e: InputEvent| {
             let input: HtmlInputElement = e.target_unchecked_into();
             let mut info = (*role_info).clone();
@@ -162,13 +158,12 @@ pub fn create_role() -> Html {
     };
 
     let oninput_search = {
-        let search_term = search_term.clone();
         Callback::from(move |e: InputEvent| {
             let input: HtmlInputElement = e.target_unchecked_into();
             if input.value().is_empty() {
-                search_term.set(None)
+                search_term.set(None);
             } else {
-                search_term.set(Some(input.value()))
+                search_term.set(Some(input.value()));
             }
         })
     };
@@ -234,35 +229,32 @@ pub fn permission_list(props: &PermissionsProp) -> HtmlResult {
     let history = use_navigator().unwrap();
     let html_result = match *res {
         Ok(ref list) => {
-            html! {
+            html!(
                 <>
                     {
                         for list.iter().map(|permission| {
-                            if let Some(s) = &props.search {
-                                if permission.description.contains(s) || permission.name.contains(s) {
-                                    html!(
-                                        <PermissionLine
-                                            selected_callback={&props.selected_callback}
-                                            checked={ if props.info.permission.contains(&permission.name) { true } else { false } }
-                                            name={permission.name.clone()}
-                                            description={permission.description.clone()} />
-                                    )
-                                } else {
-                                    html!()
-                                }
-                            } else {
-                                html!(
+                            props.search.as_ref().map_or_else(|| html!(
                                     <PermissionLine
                                         selected_callback={&props.selected_callback}
-                                        checked={ if props.info.permission.contains(&permission.name) { true } else { false } }
+                                        checked={ props.info.permission.contains(&permission.name) }
                                         name={permission.name.clone()}
                                         description={permission.description.clone()} />
-                                )
-                            }
+                                ), |s| if permission.description.contains(s) || permission.name.contains(s) {
+                                    html!(
+                                        <PermissionLine
+                                           selected_callback={&props.selected_callback}
+                                           checked={ props.info.permission.contains(&permission.name) }
+                                           name={permission.name.clone()}
+                                           description={permission.description.clone()} />
+                                    )
+                                } else {
+                                   html!()
+                                }
+                            )
                         })
                     }
                 </>
-            }
+            )
         }
         Err(ref e) => {
             match e {

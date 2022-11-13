@@ -13,11 +13,7 @@ const TOKEN_KEY: &str = "invest.token";
 lazy_static! {
     /// Jwt token read from local storage.
     pub static ref TOKEN: RwLock<Option<String>> = {
-        if let Ok(token) = LocalStorage::get(TOKEN_KEY) {
-            RwLock::new(Some(token))
-        } else {
-            RwLock::new(None)
-        }
+        LocalStorage::get(TOKEN_KEY).map_or_else(|_| RwLock::new(None), |token| RwLock::new(Some(token)))
     };
 }
 
@@ -65,12 +61,10 @@ where
     if let Ok(data) = response {
         if data.status().is_success() {
             let data: Result<T, _> = data.json::<T>().await;
-            if let Ok(data) = data {
+            data.map_or(Err(Error::DeserializeError), |data| {
                 log::debug!("Response: {:?}", data);
                 Ok(data)
-            } else {
-                Err(Error::DeserializeError)
-            }
+            })
         } else {
             match data.status().as_u16() {
                 400 => Err(Error::BadRequest),
@@ -117,11 +111,9 @@ where
                 }
                 422 => {
                     let data: Result<ErrorInfo, _> = data.json::<ErrorInfo>().await;
-                    if let Ok(data) = data {
+                    data.map_or(Err(Error::DeserializeError), |data| {
                         Err(Error::UnprocessableEntity(data))
-                    } else {
-                        Err(Error::DeserializeError)
-                    }
+                    })
                 }
                 _ => Err(Error::RequestError),
             }

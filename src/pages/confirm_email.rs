@@ -39,13 +39,13 @@ pub fn confirm() -> Html {
 
     let do_confirm = {
         let code = match confirmed {
-            Status::Unsent => match &props {
-                Ok(d) => Some(d.code.clone()),
-                Err(_) => {
+            Status::Unsent => props.as_ref().map_or_else(
+                |_| {
                     confirmation.set(Status::Invalid);
                     None
-                }
-            },
+                },
+                |d| Some(d.code.clone()),
+            ),
             _ => None,
         };
         use_async(async move {

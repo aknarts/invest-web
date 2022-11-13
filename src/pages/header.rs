@@ -192,14 +192,11 @@ fn logged_in_view(
 }
 
 fn is_active(route: &Option<Route>, desired: &[Route]) -> Option<String> {
-    match route {
-        None => None,
-        Some(r) => {
-            if desired.contains(r) {
-                Some("active".to_string())
-            } else {
-                None
-            }
+    route.as_ref().and_then(|r| {
+        if desired.contains(r) {
+            Some("active".to_string())
+        } else {
+            None
         }
-    }
+    })
 }
