@@ -2,7 +2,7 @@ use yew::prelude::*;
 
 #[function_component(Footer)]
 pub fn footer() -> Html {
-    html! {
+    html! (
         <footer class="navbar sticky-bottom bg-light border-secondary border-top">
             <div class="container-fluid">
                 <span class="navbar-text mx-auto">
@@ -11,5 +11,5 @@ pub fn footer() -> Html {
                 </span>
             </div>
         </footer>
-    }
+    )
 }

@@ -10,17 +10,15 @@ pub struct Props {
 #[function_component(ListErrors)]
 pub fn list_errors(props: &Props) -> Html {
     props.error.as_ref().map_or_else(
-        || html! {},
+        || html!(),
         |error| {
-            html! {
-                html! {
-                    <div class="alert alert-warning">
-                        {
-                             {error}
-                        }
-                    </div>
-                }
-            }
+            html!(html! (
+                <div class="alert alert-warning">
+                    {
+                         {error}
+                    }
+                </div>
+            ))
         },
     )
 }

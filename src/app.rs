@@ -45,7 +45,7 @@ pub enum Route {
 
 #[function_component(App)]
 pub fn app() -> Html {
-    html! {
+    html! (
         <UserContextProvider>
             <BrowserRouter>
                 <Header />
@@ -57,7 +57,7 @@ pub fn app() -> Html {
                 <Footer />
             </BrowserRouter>
         </UserContextProvider>
-    }
+    )
 }
 
 // Allowing because this is how yew defines the function
@@ -65,17 +65,17 @@ pub fn app() -> Html {
 fn switch(routes: Route) -> Html {
     debug!("Routing to {:?}", routes);
     match routes {
-        Route::Home => html! { <Home /> },
-        Route::NotFound => html! { <PageNotFound /> },
-        Route::Login => html! {<Login />},
-        Route::Register => html! {<Register />},
-        Route::ConfirmEmail => html! {<ConfirmEmail />},
+        Route::Home => html! ( <Home /> ),
+        Route::NotFound => html! ( <PageNotFound /> ),
+        Route::Login => html! ( <Login /> ),
+        Route::Register => html! ( <Register /> ),
+        Route::ConfirmEmail => html! ( <ConfirmEmail /> ),
         Route::Admin | Route::AdminRoot => {
-            html! {<Switch<AdminRoute> render={crate::pages::admin::switch_admin} />}
+            html! ( <Switch<AdminRoute> render={crate::pages::admin::switch_admin} /> )
         }
-        Route::Overview => html! {<Overview />},
-        Route::Invest => html! {<Invest />},
-        Route::Portfolio => html! {<Portfolio />},
-        Route::Profile => html! {<Profile />},
+        Route::Overview => html! ( <Overview /> ),
+        Route::Invest => html! ( <Invest /> ),
+        Route::Portfolio => html! ( <Portfolio /> ),
+        Route::Profile => html! ( <Profile /> ),
     }
 }

@@ -2,7 +2,7 @@ use yew::prelude::*;
 
 #[function_component(PageNotFound)]
 pub fn page_not_found() -> Html {
-    html! {
+    html! (
         <section class="hero is-danger is-bold is-large">
             <div class="hero-body">
                 <div class="container">
@@ -15,5 +15,5 @@ pub fn page_not_found() -> Html {
                 </div>
             </div>
         </section>
-    }
+    )
 }

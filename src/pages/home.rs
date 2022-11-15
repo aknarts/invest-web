@@ -2,7 +2,7 @@ use yew::prelude::*;
 
 #[function_component(Home)]
 pub fn home() -> Html {
-    html! {
+    html! (
         <div class="tile is-ancestor is-vertical">
             <div class="tile is-child hero">
                 <div class="hero-body container pb-0">
@@ -14,11 +14,11 @@ pub fn home() -> Html {
                 { view_info_tiles() }
             </div>
         </div>
-    }
+    )
 }
 
 fn view_info_tiles() -> Html {
-    html! {
+    html! (
         <>
             <div class="tile is-parent">
                 <div class="tile is-child box">
@@ -45,5 +45,5 @@ fn view_info_tiles() -> Html {
                 </div>
             </div>
         </>
-    }
+    )
 }

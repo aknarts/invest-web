@@ -63,7 +63,7 @@ pub fn register() -> Html {
         })
     };
 
-    html! {
+    html! (
         <div class="card shadow align-self-center flex-fill rounded">
             <div class="card-header d-flex">
                 <h2 class="card-title p-2 flex-grow-1">{ "Sign Up" }</h2>
@@ -142,5 +142,5 @@ pub fn register() -> Html {
                 </div>
             </div>
         </div>
-    }
+    )
 }

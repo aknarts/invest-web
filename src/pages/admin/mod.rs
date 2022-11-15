@@ -25,9 +25,9 @@ pub enum AdminRoute {
 #[allow(clippy::module_name_repetitions)]
 #[allow(clippy::needless_pass_by_value)]
 pub fn switch_admin(route: AdminRoute) -> Html {
-    html! {
+    html! (
         <Admin route={route} />
-    }
+    )
 }
 
 #[derive(Properties, Clone, Eq, PartialEq)]
@@ -39,7 +39,7 @@ pub struct Props {
 pub fn admin(props: &Props) -> Html {
     let route = &props.route;
     let user_ctx = use_user_context();
-    html! {
+    html! (
         <div class="grid flex-fill">
             <div>
                 <h1 class="title is-1">{ "Admin" }</h1>
@@ -63,7 +63,7 @@ pub fn admin(props: &Props) -> Html {
                 {route_match(route, &user_ctx)}
             </div>
         </div>
-    }
+    )
 }
 
 fn is_active(route: &AdminRoute, desired: &[AdminRoute]) -> Option<String> {
@@ -78,18 +78,18 @@ fn route_match(route: &AdminRoute, user_info: &crate::hooks::Handle) -> Html {
     match route {
         AdminRoute::Default => {
             if user_info.check_permission("list_users") {
-                html! {<Users />}
+                html! ( <Users /> )
             } else if user_info.check_permission("list_roles") {
-                html! {<Roles />}
+                html! ( <Roles /> )
             } else if user_info.check_permission("list_investments") {
-                html! {<Investments />}
+                html! ( <Investments /> )
             } else {
                 user_info.navigate_to(&Route::Home);
                 html!("Unauthorized")
             }
         }
-        AdminRoute::Users => html! {<Users />},
-        AdminRoute::Roles => html! {<Roles />},
-        AdminRoute::Investments => html! {<Investments />},
+        AdminRoute::Users => html! ( <Users /> ),
+        AdminRoute::Roles => html! ( <Roles /> ),
+        AdminRoute::Investments => html! ( <Investments /> ),
     }
 }

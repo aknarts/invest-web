@@ -56,7 +56,7 @@ pub fn login() -> Html {
         })
     };
 
-    html! {
+    html! (
         <div class="card align-self-center flex-fill shadow rounded">
             <div class="card-header d-flex">
                 <h2 class="card-title p-2 flex-grow-1">{ "Sign In" }</h2>
@@ -118,5 +118,5 @@ pub fn login() -> Html {
                 </div>
             </div>
         </div>
-    }
+    )
 }

@@ -89,7 +89,7 @@ pub fn confirm() -> Html {
         do_confirm,
     );
 
-    html! {
+    html! (
         <div class="tile is-ancestor is-vertical">
             <div class="content has-text-centered">
                 {
@@ -103,5 +103,5 @@ pub fn confirm() -> Html {
                 }
             </div>
         </div>
-    }
+    )
 }

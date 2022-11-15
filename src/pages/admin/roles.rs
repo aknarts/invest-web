@@ -1,6 +1,7 @@
 use crate::app::Route;
 use crate::components::modal::Modal;
 use crate::error::Error;
+use crate::hooks::use_user_context;
 use crate::services::admin::{get_permissions_list, get_role_list, Permission, Role};
 use log::debug;
 use std::collections::HashSet;
@@ -8,7 +9,6 @@ use web_sys::HtmlInputElement;
 use yew::prelude::*;
 use yew::suspense::{use_future, SuspensionResult, UseFutureHandle};
 use yew_router::hooks::use_navigator;
-use crate::hooks::use_user_context;
 
 #[hook]
 fn use_roles_list() -> SuspensionResult<UseFutureHandle<Result<Vec<Role>, Error>>> {
@@ -21,7 +21,7 @@ pub fn role_list() -> HtmlResult {
     let history = use_navigator().unwrap();
     let html_result = match *res {
         Ok(ref list) => {
-            html! {
+            html! (
                 <div>
                     <table class="table table-hover">
                       <thead>
@@ -39,7 +39,7 @@ pub fn role_list() -> HtmlResult {
                       </tbody>
                     </table>
                 </div>
-            }
+            )
         }
         Err(ref e) => {
             match e {
@@ -79,14 +79,13 @@ pub fn roles() -> Html {
     let active = use_state(|| false);
     let user_ctx = use_user_context();
 
-
-    let fallback = html! {
+    let fallback = html! (
         <div class="d-flex justify-content-center">
             <span class="spinner-border text-secondary" role="status">
               <span class="sr-only">{"Loading..."}</span>
             </span>
         </div>
-    };
+    );
 
     let act = *active;
 
@@ -96,7 +95,7 @@ pub fn roles() -> Html {
         })
     };
 
-    html! {
+    html! (
         <section class="grid flex-fill border-end border-start border-bottom">
             if user_ctx.check_permission("create_role") {
                 <div class="d-flex flex-row-reverse m-1">
@@ -110,7 +109,7 @@ pub fn roles() -> Html {
                 <RoleList />
             </Suspense>
         </section>
-    }
+    )
 }
 
 #[function_component(CreateRole)]
@@ -124,13 +123,13 @@ pub fn create_role() -> Html {
         })
     };
 
-    let fallback = html! {
+    let fallback = html! (
         <div class="d-flex justify-content-center">
             <span class="spinner-border text-secondary" role="status">
               <span class="sr-only">{"Loading..."}</span>
             </span>
         </div>
-    };
+    );
 
     let search = (*search_term).as_ref().cloned();
 

@@ -12,9 +12,9 @@ pub struct Props {
 pub fn user_context_provider(props: &Props) -> Html {
     let user_ctx = crate::hooks::use_refresh_user_context();
 
-    html! {
+    html! (
         <ContextProvider<UseStateHandle<UserInfo>> context={user_ctx}>
             { for props.children.iter() }
         </ContextProvider<UseStateHandle<UserInfo>>>
-    }
+    )
 }

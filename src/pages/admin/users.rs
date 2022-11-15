@@ -17,7 +17,7 @@ pub fn user_list() -> HtmlResult {
     let history = use_navigator().unwrap();
     let html_result = match *res {
         Ok(ref list) => {
-            html! {
+            html! (
                 <div>
                     <table class="table table-hover">
                       <thead>
@@ -35,7 +35,7 @@ pub fn user_list() -> HtmlResult {
                       </tbody>
                     </table>
                 </div>
-            }
+            )
         }
         Err(ref e) => {
             match e {
@@ -66,18 +66,19 @@ fn user_line(user: &User) -> Html {
 
 #[function_component(Users)]
 pub fn users() -> Html {
-    let fallback = html! {
+    let fallback = html! (
         <div class="d-flex justify-content-center">
             <span class="spinner-border text-secondary" role="status">
               <span class="sr-only">{"Loading..."}</span>
             </span>
         </div>
-    };
-    html! {
+    );
+
+    html! (
         <section class="grid flex-fill border-end border-start border-bottom">
             <Suspense {fallback}>
                 <UserList />
             </Suspense>
         </section>
-    }
+    )
 }

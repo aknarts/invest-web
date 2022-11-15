@@ -38,7 +38,7 @@ pub fn header() -> Html {
         })
     };
 
-    html! {
+    html! (
         <>
             <nav class="navbar navbar-expand-lg sticky-top shadow bg-light" role="navigation" aria-label="main navigation">
                 <div class="container-fluid">
@@ -68,11 +68,11 @@ pub fn header() -> Html {
                 </div>
             }
         </>
-    }
+    )
 }
 
 fn logged_out_view(route: &Option<Route>) -> Html {
-    html! {
+    html! (
         <>
             <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                 <li class="nav-item">
@@ -98,7 +98,7 @@ fn logged_out_view(route: &Option<Route>) -> Html {
                 </li>
             </ul>
         </>
-    }
+    )
 }
 
 fn logged_in_view(
@@ -125,7 +125,7 @@ fn logged_in_view(
         })
     };
 
-    html! {
+    html! (
         <>
             <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                 <li class="nav-item">
@@ -188,7 +188,7 @@ fn logged_in_view(
                 </li>
             </ul>
         </>
-    }
+    )
 }
 
 fn is_active(route: &Option<Route>, desired: &[Route]) -> Option<String> {
