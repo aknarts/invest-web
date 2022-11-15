@@ -8,6 +8,7 @@ use web_sys::HtmlInputElement;
 use yew::prelude::*;
 use yew::suspense::{use_future, SuspensionResult, UseFutureHandle};
 use yew_router::hooks::use_navigator;
+use crate::hooks::use_user_context;
 
 #[hook]
 fn use_roles_list() -> SuspensionResult<UseFutureHandle<Result<Vec<Role>, Error>>> {
@@ -76,6 +77,8 @@ pub struct RoleInfo {
 #[function_component(Roles)]
 pub fn roles() -> Html {
     let active = use_state(|| false);
+    let user_ctx = use_user_context();
+
 
     let fallback = html! {
         <div class="d-flex justify-content-center">
@@ -95,12 +98,14 @@ pub fn roles() -> Html {
 
     html! {
         <section class="grid flex-fill border-end border-start border-bottom">
-            <div class="d-flex flex-row-reverse m-1">
-                <button type="button" onclick={&onclick} class="btn btn-success">{ "Add Role" }</button>
-            </div>
-            <Modal close={&onclick} active={act} title="Create new role" >
-                <CreateRole />
-            </Modal>
+            if user_ctx.check_permission("create_role") {
+                <div class="d-flex flex-row-reverse m-1">
+                    <button type="button" onclick={&onclick} class="btn btn-success">{ "Add Role" }</button>
+                </div>
+                <Modal close={&onclick} active={act} title="Create new role" >
+                    <CreateRole />
+                </Modal>
+            }
             <Suspense {fallback}>
                 <RoleList />
             </Suspense>
