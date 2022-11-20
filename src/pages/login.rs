@@ -12,9 +12,15 @@ use yew_router::prelude::*;
 pub fn login() -> Html {
     let user_ctx = use_user_context();
     let login_info = use_state(LoginInfo::default);
+    let button_state = use_state(|| true);
+    let login_state = use_state(|| false);
+    let login_status = *login_state;
+    let button_status = *button_state;
+
     if user_ctx.is_authenticated() {
         user_ctx.navigate_to(&Route::Overview);
     }
+
     let user_login = {
         let login_info = login_info.clone();
         use_async(async move {
@@ -23,43 +29,60 @@ pub fn login() -> Html {
         })
     };
 
-    use_effect_with_deps(
-        move |user_login| {
-            if let Some(user_info) = &user_login.data {
-                user_ctx.login(user_info.clone());
-            }
-            || ()
-        },
-        user_login.clone(),
-    );
+    {
+        let bt = button_state.clone();
+        let ls = login_state.clone();
+        use_effect_with_deps(
+            move |user_login| {
+                if let Some(user_info) = &user_login.data {
+                    bt.set(false);
+                    ls.set(false);
+                    user_ctx.login(user_info.clone());
+                } else if let Some(_) = &user_login.error {
+                    bt.set(false);
+                    ls.set(false);
+                }
+                || ()
+            },
+            user_login.clone(),
+        );
+    }
 
     let onsubmit = {
         let user_login = user_login.clone();
+        let button_state = button_state.clone();
+        let login_state = login_state.clone();
         Callback::from(move |e: SubmitEvent| {
+            button_state.set(true);
+            login_state.set(true);
             e.prevent_default(); /* Prevent event propagation */
             user_login.run();
         })
     };
     let oninput_username = {
         let login_info = login_info.clone();
+        let button_state = button_state.clone();
         Callback::from(move |e: InputEvent| {
             let input: HtmlInputElement = e.target_unchecked_into();
             let mut info = (*login_info).clone();
             info.username = input.value();
+            button_state.set(info.password.is_empty() || info.username.is_empty());
             login_info.set(info);
         })
     };
     let oninput_password = {
         let login_info = login_info.clone();
+        let button_state = button_state.clone();
         Callback::from(move |e: InputEvent| {
             let input: HtmlInputElement = e.target_unchecked_into();
             let mut info = (*login_info).clone();
             info.password = input.value();
+            button_state.set(info.password.is_empty() || info.username.is_empty());
             login_info.set(info);
         })
     };
 
-    html! (
+    html!(
         <div class="card align-self-center flex-fill shadow rounded">
             <div class="card-header d-flex">
                 <h2 class="card-title p-2 flex-grow-1">{ "Sign In" }</h2>
@@ -112,7 +135,16 @@ pub fn login() -> Html {
                                 <button
                                     class="btn btn-primary mb-2"
                                     type="submit"
-                                    disabled=false>
+                                    disabled={ button_status }>
+                                    {
+                                        if login_status {
+                                            html!(
+                                              <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                                            )
+                                        } else {
+                                            html!()
+                                        }
+                                    }
                                     { "Sign in" }
                                 </button>
                             </div>

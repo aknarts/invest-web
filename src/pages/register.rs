@@ -11,6 +11,10 @@ use yew_router::prelude::*;
 pub fn register() -> Html {
     let user_ctx = use_user_context();
     let register_info = use_state(RegisterInfo::default);
+    let button_state = use_state(|| true);
+    let registering_state = use_state(|| false);
+    let registering_status = *registering_state;
+    let button_status = *button_state;
 
     if user_ctx.is_authenticated() {
         user_ctx.navigate_to(&Route::Overview);
@@ -22,10 +26,17 @@ pub fn register() -> Html {
     };
 
     {
+        let bt = button_state.clone();
+        let rs = registering_state.clone();
         use_effect_with_deps(
             move |user_register| {
                 if let Some(user_info) = &user_register.data {
+                    bt.set(false);
+                    rs.set(false);
                     user_ctx.register(user_info.clone());
+                } else if let Some(_) = &user_register.error {
+                    bt.set(false);
+                    rs.set(false);
                 }
                 || ()
             },
@@ -35,40 +46,50 @@ pub fn register() -> Html {
 
     let onsubmit = {
         let user_register = user_register.clone();
+        let button_state = button_state.clone();
+        let registering_state = registering_state.clone();
         Callback::from(move |e: SubmitEvent| {
+            button_state.set(true);
+            registering_state.set(true);
             e.prevent_default(); /* Prevent event propagation */
             user_register.run();
         })
     };
     let oninput_username = {
         let register_info = register_info.clone();
+        let button_state = button_state.clone();
         Callback::from(move |e: InputEvent| {
             let input: HtmlInputElement = e.target_unchecked_into();
             let mut info = (*register_info).clone();
             info.username = input.value();
+            button_state.set(info.email.is_empty() || info.password.is_empty() || info.username.is_empty());
             register_info.set(info);
         })
     };
     let oninput_email = {
         let register_info = register_info.clone();
+        let button_state = button_state.clone();
         Callback::from(move |e: InputEvent| {
             let input: HtmlInputElement = e.target_unchecked_into();
             let mut info = (*register_info).clone();
             info.email = input.value();
+            button_state.set(info.email.is_empty() || info.password.is_empty() || info.username.is_empty());
             register_info.set(info);
         })
     };
     let oninput_password = {
         let register_info = register_info.clone();
+        let button_state = button_state.clone();
         Callback::from(move |e: InputEvent| {
             let input: HtmlInputElement = e.target_unchecked_into();
             let mut info = (*register_info).clone();
             info.password = input.value();
+            button_state.set(info.email.is_empty() || info.password.is_empty() || info.username.is_empty());
             register_info.set(info);
         })
     };
 
-    html! (
+    html!(
         <div class="card shadow align-self-center flex-fill rounded">
             <div class="card-header d-flex">
                 <h2 class="card-title p-2 flex-grow-1">{ "Sign Up" }</h2>
@@ -138,7 +159,16 @@ pub fn register() -> Html {
                                 <button
                                     class="btn btn-primary mb-2"
                                     type="submit"
-                                    disabled=false>
+                                    disabled={ button_status }>
+                                    {
+                                        if registering_status {
+                                            html!(
+                                              <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                                            )
+                                        } else {
+                                            html!()
+                                        }
+                                    }
                                     { "Sign up" }
                                 </button>
                             </div>
