@@ -11,6 +11,11 @@ use yew_router::prelude::*;
 pub fn register() -> Html {
     let user_ctx = use_user_context();
     let register_info = use_state(RegisterInfo::default);
+
+    if user_ctx.is_authenticated() {
+        user_ctx.navigate_to(&Route::Overview);
+    }
+
     let user_register = {
         let register_info = register_info.clone();
         use_async(async move { crate::services::auth::register((*register_info).clone()).await })

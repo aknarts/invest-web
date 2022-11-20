@@ -12,6 +12,9 @@ use yew_router::prelude::*;
 pub fn login() -> Html {
     let user_ctx = use_user_context();
     let login_info = use_state(LoginInfo::default);
+    if user_ctx.is_authenticated() {
+        user_ctx.navigate_to(&Route::Overview);
+    }
     let user_login = {
         let login_info = login_info.clone();
         use_async(async move {
