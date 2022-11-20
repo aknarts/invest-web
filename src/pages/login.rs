@@ -38,7 +38,7 @@ pub fn login() -> Html {
                     bt.set(false);
                     ls.set(false);
                     user_ctx.login(user_info.clone());
-                } else if let Some(_) = &user_login.error {
+                } else if user_login.error.is_some() {
                     bt.set(false);
                     ls.set(false);
                 }
@@ -51,7 +51,6 @@ pub fn login() -> Html {
     let onsubmit = {
         let user_login = user_login.clone();
         let button_state = button_state.clone();
-        let login_state = login_state.clone();
         Callback::from(move |e: SubmitEvent| {
             button_state.set(true);
             login_state.set(true);
@@ -59,6 +58,7 @@ pub fn login() -> Html {
             user_login.run();
         })
     };
+
     let oninput_username = {
         let login_info = login_info.clone();
         let button_state = button_state.clone();
@@ -72,7 +72,6 @@ pub fn login() -> Html {
     };
     let oninput_password = {
         let login_info = login_info.clone();
-        let button_state = button_state.clone();
         Callback::from(move |e: InputEvent| {
             let input: HtmlInputElement = e.target_unchecked_into();
             let mut info = (*login_info).clone();

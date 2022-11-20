@@ -34,7 +34,14 @@ pub fn role_list() -> HtmlResult {
                       </thead>
                       <tbody>
                         {
-                            for list.iter().map(|role| {role_line(role)})
+                            for list.iter().map(|role| {
+                                    if role.name.eq("admin"){
+                                        html!()
+                                    } else {
+                                        html!(<RoleLine role={role.clone()} />)
+                                    }
+                                }
+                            )
                         }
                       </tbody>
                     </table>
@@ -57,13 +64,34 @@ pub fn role_list() -> HtmlResult {
     Ok(html_result)
 }
 
-fn role_line(role: &Role) -> Html {
+#[derive(Properties, PartialEq, Eq)]
+pub struct RoleLineProp {
+    pub role: Role,
+}
+
+#[function_component(RoleLine)]
+fn role_line(props: &RoleLineProp) -> Html {
+    let active = use_state(|| false);
+    let act = *active;
+
+    let onclick = {
+        Callback::from(move |_| {
+            debug!("Clicked");
+            active.set(!*active);
+        })
+    };
+
     html!(
         <tr>
-          <th scope="row">{&role.id}</th>
-          <td>{&role.name}</td>
-          <td>{&role.description}</td>
-          <td><button type="button" class="btn btn-primary mx-1">{ "Edit" }</button><button type="button" class="btn btn-danger mx-1">{"Remove"}</button></td>
+          <th scope="row">{&props.role.id}</th>
+          <td>{&props.role.name}</td>
+          <td>{&props.role.description}</td>
+          <td>
+            <button type="button" onclick={&onclick} class="btn btn-primary mx-1">{ "Edit" }</button><button type="button" class="btn btn-danger mx-1">{"Remove"}</button>
+            <Modal close={&onclick} active={act} title="Edit role" >
+                <ManageRole role={props.role.clone()} />
+            </Modal>
+          </td>
         </tr>
     )
 }
@@ -102,7 +130,7 @@ pub fn roles() -> Html {
                     <button type="button" onclick={&onclick} class="btn btn-success">{ "Add Role" }</button>
                 </div>
                 <Modal close={&onclick} active={act} title="Create new role" >
-                    <CreateRole />
+                    <ManageRole />
                 </Modal>
             }
             <Suspense {fallback}>
@@ -112,9 +140,23 @@ pub fn roles() -> Html {
     )
 }
 
-#[function_component(CreateRole)]
-pub fn create_role() -> Html {
-    let role_info = use_state(RoleInfo::default);
+#[derive(Properties, PartialEq, Eq)]
+pub struct ManageRoleProps {
+    pub role: Option<Role>,
+}
+
+#[function_component(ManageRole)]
+pub fn manage_role(props: &ManageRoleProps) -> Html {
+    let role = props.role.as_ref().map_or_else(Role::default, Clone::clone);
+    let r = role.clone();
+
+    let role_info = use_state(|| RoleInfo {
+        name: r.name,
+        permission: r.permissions.map_or_else(HashSet::default, |v| {
+            v.iter().map(|x| x.name.clone()).collect()
+        }),
+    });
+
     let search_term = use_state(|| None::<String>);
 
     let onsubmit = {
@@ -186,6 +228,7 @@ pub fn create_role() -> Html {
                                 type="text"
                                 id="rolenameGroup"
                                 placeholder="Rolename"
+                                value={role.name}
                                 oninput={oninput_rolename}
                                 />
                             <label for="rolenameGroup">{"Role Name"}</label>
@@ -204,12 +247,12 @@ pub fn create_role() -> Html {
                             />
                     </div>
                     <Suspense {fallback}>
-                        <PermissionList selected_callback={oninput_permission} search={search} info={info}/>
+                        <PermissionList additional_permissions={role.permissions} selected_callback={oninput_permission} search={search} info={info}/>
                     </Suspense>
                 </fieldset>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-primary">{ "Create" }</button>
+                <button type="button" class="btn btn-primary">{ if props.role.is_some() {"Edit"} else {"Create"} }</button>
             </div>
         </form>
     )
@@ -225,6 +268,7 @@ pub struct PermissionsProp {
     pub selected_callback: Callback<InputEvent>,
     pub search: Option<String>,
     pub info: RoleInfo,
+    pub additional_permissions: Option<Vec<Permission>>,
 }
 
 #[function_component(PermissionList)]
@@ -233,24 +277,28 @@ pub fn permission_list(props: &PermissionsProp) -> HtmlResult {
     let history = use_navigator().unwrap();
     let html_result = match *res {
         Ok(ref list) => {
+            let mut full_list = list.clone();
+            if let Some(additional) = &props.additional_permissions {
+                for add in additional {
+                    if !list.contains(add) {
+                        full_list.push(add.clone());
+                    }
+                }
+            }
+            full_list.sort_by(|a, b| a.description.cmp(&b.description));
+
             html!(
                 <>
                     {
-                        for list.iter().map(|permission| {
+                        for full_list.iter().map(|permission| {
                             props.search.as_ref().map_or_else(|| html!(
-                                    <PermissionLine
-                                        selected_callback={&props.selected_callback}
-                                        checked={ props.info.permission.contains(&permission.name) }
-                                        name={permission.name.clone()}
-                                        description={permission.description.clone()} />
+                                    permission_checkbox(&props.selected_callback,
+                                                        props.info.permission.contains(&permission.name),
+                                                        permission)
                                 ), |s| if permission.description.contains(s) || permission.name.contains(s) {
-                                    html!(
-                                        <PermissionLine
-                                           selected_callback={&props.selected_callback}
-                                           checked={ props.info.permission.contains(&permission.name) }
-                                           name={permission.name.clone()}
-                                           description={permission.description.clone()} />
-                                    )
+                                    permission_checkbox(&props.selected_callback,
+                                                        props.info.permission.contains(&permission.name),
+                                                        permission)
                                 } else {
                                    html!()
                                 }
@@ -274,6 +322,20 @@ pub fn permission_list(props: &PermissionsProp) -> HtmlResult {
         }
     };
     Ok(html_result)
+}
+
+fn permission_checkbox(
+    callback: &Callback<InputEvent>,
+    checked: bool,
+    permission: &Permission,
+) -> Html {
+    html!(
+        <PermissionLine
+           selected_callback={callback}
+           checked={ checked }
+           name={permission.name.clone()}
+           description={permission.description.clone()} />
+    )
 }
 
 #[derive(Properties, PartialEq)]

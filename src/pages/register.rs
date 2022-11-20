@@ -34,7 +34,7 @@ pub fn register() -> Html {
                     bt.set(false);
                     rs.set(false);
                     user_ctx.register(user_info.clone());
-                } else if let Some(_) = &user_register.error {
+                } else if user_register.error.is_some() {
                     bt.set(false);
                     rs.set(false);
                 }
@@ -47,7 +47,6 @@ pub fn register() -> Html {
     let onsubmit = {
         let user_register = user_register.clone();
         let button_state = button_state.clone();
-        let registering_state = registering_state.clone();
         Callback::from(move |e: SubmitEvent| {
             button_state.set(true);
             registering_state.set(true);
@@ -62,7 +61,8 @@ pub fn register() -> Html {
             let input: HtmlInputElement = e.target_unchecked_into();
             let mut info = (*register_info).clone();
             info.username = input.value();
-            button_state.set(info.email.is_empty() || info.password.is_empty() || info.username.is_empty());
+            button_state
+                .set(info.email.is_empty() || info.password.is_empty() || info.username.is_empty());
             register_info.set(info);
         })
     };
@@ -73,18 +73,19 @@ pub fn register() -> Html {
             let input: HtmlInputElement = e.target_unchecked_into();
             let mut info = (*register_info).clone();
             info.email = input.value();
-            button_state.set(info.email.is_empty() || info.password.is_empty() || info.username.is_empty());
+            button_state
+                .set(info.email.is_empty() || info.password.is_empty() || info.username.is_empty());
             register_info.set(info);
         })
     };
     let oninput_password = {
         let register_info = register_info.clone();
-        let button_state = button_state.clone();
         Callback::from(move |e: InputEvent| {
             let input: HtmlInputElement = e.target_unchecked_into();
             let mut info = (*register_info).clone();
             info.password = input.value();
-            button_state.set(info.email.is_empty() || info.password.is_empty() || info.username.is_empty());
+            button_state
+                .set(info.email.is_empty() || info.password.is_empty() || info.username.is_empty());
             register_info.set(info);
         })
     };

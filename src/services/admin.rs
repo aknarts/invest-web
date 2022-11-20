@@ -14,6 +14,7 @@ pub struct Role {
     pub id: i32,
     pub name: String,
     pub description: String,
+    pub permissions: Option<Vec<Permission>>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, Default)]
