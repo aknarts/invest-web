@@ -18,7 +18,7 @@ pub fn modal(props: &Prop) -> Html {
 
     html!(
         <div class={classes!("modal", "fade", active_class.0)} style={active_class.1}>
-            <div class="modal-dialog">
+            <div class="modal-dialog modal-dialog-scrollable">
                 <div class="modal-content">
                     <div class="modal-header">
                         <h1 class="modal-title fs-5" id="exampleModalLabel">{props.title.clone()}</h1>
