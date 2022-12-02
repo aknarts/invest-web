@@ -11,7 +11,7 @@ use crate::pages::page_not_found::PageNotFound;
 use crate::pages::portfolio::Portfolio;
 use crate::pages::profile::Profile;
 use crate::pages::register::Register;
-use log::debug;
+use tracing::debug;
 use yew::html::Html;
 use yew::prelude::*;
 use yew_router::prelude::*;

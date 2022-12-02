@@ -3,9 +3,9 @@ use crate::types::auth::ApiResult;
 use crate::types::ErrorInfo;
 use gloo::storage::{LocalStorage, Storage};
 use lazy_static::lazy_static;
-use log::debug;
 use parking_lot::RwLock;
 use serde::{de::DeserializeOwned, Serialize};
+use tracing::debug;
 
 const API_ROOT: &str = "http://investown2.test:8081/";
 const TOKEN_KEY: &str = "invest.token";
@@ -62,7 +62,7 @@ where
         if data.status().is_success() {
             let data: Result<T, _> = data.json::<T>().await;
             data.map_or(Err(Error::DeserializeError), |data| {
-                log::debug!("Response: {:?}", data);
+                debug!("Response: {:?}", data);
                 Ok(data)
             })
         } else {

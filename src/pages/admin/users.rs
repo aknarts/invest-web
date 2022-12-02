@@ -1,7 +1,7 @@
 use crate::app::Route;
 use crate::error::Error;
 use crate::services::admin::{get_user_list, User};
-use log::debug;
+use tracing::debug;
 use yew::prelude::*;
 use yew::suspense::{use_future, SuspensionResult, UseFutureHandle};
 use yew_router::hooks::use_navigator;
