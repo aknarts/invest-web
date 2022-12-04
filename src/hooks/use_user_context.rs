@@ -1,5 +1,6 @@
 use crate::app::Route;
 use crate::error::Error;
+use crate::pages::admin::AdminRoute;
 use crate::services::auth::current;
 use crate::services::requests::{get_token, set_token};
 use crate::types::auth::{RegisterResponse, UserInfo};
@@ -14,6 +15,11 @@ use yew_router::prelude::{use_navigator, Navigator};
 pub struct Handle {
     inner: UseStateHandle<UserInfo>,
     history: Navigator,
+}
+
+pub enum Routes {
+    Admin(AdminRoute),
+    Default(Route),
 }
 
 impl Handle {
@@ -36,8 +42,15 @@ impl Handle {
         false
     }
 
-    pub fn navigate_to(&self, route: &Route) {
-        self.history.push(route);
+    pub fn navigate_to(&self, route: &Routes) {
+        match route {
+            Routes::Admin(r) => {
+                self.history.push(r);
+            }
+            Routes::Default(r) => {
+                self.history.push(r);
+            }
+        }
     }
 
     pub fn register(&self, value: RegisterResponse) {

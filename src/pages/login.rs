@@ -1,6 +1,6 @@
 use crate::app::Route;
 use crate::components::list_errors::ListErrors;
-use crate::hooks::use_user_context;
+use crate::hooks::{use_user_context, Routes};
 use crate::types::auth::LoginInfo;
 use web_sys::HtmlInputElement;
 use yew::prelude::*;
@@ -18,7 +18,7 @@ pub fn login() -> Html {
     let button_status = *button_state;
 
     if user_ctx.is_authenticated() {
-        user_ctx.navigate_to(&Route::Overview);
+        user_ctx.navigate_to(&Routes::Default(Route::Overview));
     }
 
     let user_login = {

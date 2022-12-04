@@ -2,7 +2,7 @@ mod investments;
 mod roles;
 mod users;
 use crate::app::Route;
-use crate::hooks::use_user_context;
+use crate::hooks::{use_user_context, Routes};
 use investments::Investments;
 use roles::Roles;
 use users::Users;
@@ -84,7 +84,7 @@ fn route_match(route: &AdminRoute, user_info: &crate::hooks::Handle) -> Html {
             } else if user_info.check_permission("list_investments") {
                 html! ( <Investments /> )
             } else {
-                user_info.navigate_to(&Route::Home);
+                user_info.navigate_to(&Routes::Default(Route::Home));
                 html!("Unauthorized")
             }
         }
