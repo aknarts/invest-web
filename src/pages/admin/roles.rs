@@ -3,14 +3,14 @@ use crate::components::modal::Modal;
 use crate::error::Error;
 use crate::hooks::use_user_context;
 use crate::services::admin::{
-    create_role, edit_role, get_permissions_list, get_role_list, Permission, Role, RoleInfo,
+    create_role, edit_role, get_permissions_list, get_role_list, Permission, Role, RoleId, RoleInfo,
 };
 use std::collections::HashSet;
 use tracing::debug;
 use web_sys::HtmlInputElement;
 use yew::prelude::*;
 use yew::suspense::{use_future, SuspensionResult, UseFutureHandle};
-use yew_hooks::use_async;
+use yew_hooks::{use_async, use_counter, UseCounterHandle};
 use yew_router::hooks::use_navigator;
 
 #[hook]
@@ -18,8 +18,13 @@ fn use_roles_list() -> SuspensionResult<UseFutureHandle<Result<Vec<Role>, Error>
     use_future(|| async move { get_role_list().await })
 }
 
+#[derive(Properties, PartialEq)]
+pub struct RoleListProp {
+    pub counter: UseCounterHandle,
+}
+
 #[function_component(RoleList)]
-pub fn role_list() -> HtmlResult {
+pub fn role_list(props: &RoleListProp) -> HtmlResult {
     let res = use_roles_list()?;
     let user_ctx = use_user_context();
     let history = use_navigator().unwrap();
@@ -42,7 +47,7 @@ pub fn role_list() -> HtmlResult {
                             <button type="button" onclick={&onclick} class="btn btn-success">{ "Add Role" }</button>
                         </div>
                         <Modal close={&onclick} active={act} title="Create new role" >
-                            <ManageRole close={&onclick} />
+                            <ManageRole close={&onclick} counter={props.counter.clone()}/>
                         </Modal>
                     }
                     <table class="table table-hover">
@@ -60,7 +65,7 @@ pub fn role_list() -> HtmlResult {
                                     if role.name.eq("admin"){
                                         html!()
                                     } else {
-                                        html!(<RoleLine role={role.clone()}/>)
+                                        html!(<RoleLine role={role.clone()} counter={props.counter.clone()}/>)
                                     }
                                 }
                             )
@@ -89,17 +94,27 @@ pub fn role_list() -> HtmlResult {
 #[derive(Properties, PartialEq)]
 pub struct RoleLineProp {
     pub role: Role,
+    pub counter: UseCounterHandle,
 }
 
 #[function_component(RoleLine)]
 fn role_line(props: &RoleLineProp) -> Html {
-    let active = use_state(|| false);
-    let act = *active;
+    let edit = use_state(|| false);
+    let ed = *edit;
+    let delete = use_state(|| false);
+    let del = *delete;
 
     let onclick = {
         Callback::from(move |_| {
             debug!("Clicked");
-            active.set(!*active);
+            edit.set(!*edit);
+        })
+    };
+
+    let onclick_delete = {
+        Callback::from(move |_| {
+            debug!("Clicked");
+            delete.set(!*delete);
         })
     };
 
@@ -109,9 +124,13 @@ fn role_line(props: &RoleLineProp) -> Html {
           <td>{&props.role.name}</td>
           <td>{&props.role.description}</td>
           <td>
-            <button type="button" onclick={&onclick} class="btn btn-primary mx-1">{ "Edit" }</button><button type="button" class="btn btn-danger mx-1">{"Remove"}</button>
-            <Modal close={&onclick} active={act} title="Edit role" >
-                <ManageRole role={props.role.clone()} close={&onclick}/>
+            <button type="button" onclick={&onclick} class="btn btn-primary mx-1">{ "Edit" }</button>
+            <button type="button" onclick={&onclick_delete} class="btn btn-danger mx-1">{"Remove"}</button>
+            <Modal close={&onclick} active={ed} title="Edit role" >
+                <ManageRole role={props.role.clone()} close={&onclick} counter={props.counter.clone()}/>
+            </Modal>
+            <Modal close={&onclick_delete} active={del} title="Delete role" >
+                <DeleteRole role={props.role.clone()} close={&onclick_delete} counter={props.counter.clone()}/>
             </Modal>
           </td>
         </tr>
@@ -120,6 +139,11 @@ fn role_line(props: &RoleLineProp) -> Html {
 
 #[function_component(Roles)]
 pub fn roles() -> Html {
+    let counter = use_counter(0);
+
+    let count = *counter;
+    debug!("Current count: {}", count);
+
     let fallback = html! (
         <div class="d-flex justify-content-center">
             <span class="spinner-border text-secondary" role="status">
@@ -131,9 +155,69 @@ pub fn roles() -> Html {
     html! (
         <section class="grid flex-fill border-end border-start border-bottom">
             <Suspense {fallback}>
-                <RoleList/>
+                <RoleList counter={counter} key={count}/>
             </Suspense>
         </section>
+    )
+}
+
+#[derive(Properties, PartialEq)]
+pub struct DeleteRoleProps {
+    pub role: Option<Role>,
+    pub close: Callback<MouseEvent>,
+    pub counter: UseCounterHandle,
+}
+
+#[function_component(DeleteRole)]
+pub fn delete_role(props: &DeleteRoleProps) -> Html {
+    let role = props.role.as_ref().map_or(
+        Role {
+            id: -1,
+            name: "".to_string(),
+            description: "".to_string(),
+            permissions: None,
+        },
+        Clone::clone,
+    );
+
+    let role_delete = {
+        let role = role.clone();
+        use_async(async move { crate::services::admin::delete_role(RoleId { id: role.id }).await })
+    };
+
+    let onsubmit = {
+        let role_delete = role_delete.clone();
+        let close = props.close.clone();
+        Callback::from(move |e: SubmitEvent| {
+            e.prevent_default();
+            role_delete.run();
+            close.emit(MouseEvent::new("mousedown").unwrap());
+        })
+    };
+
+    {
+        let counter = props.counter.clone();
+        use_effect_with_deps(
+            move |role_delete| {
+                if let Some(_) = &role_delete.data {
+                    counter.increase();
+                }
+                || ()
+            },
+            role_delete,
+        )
+    };
+
+    html!(
+        <form {onsubmit}>
+            <div class="modal-body">
+                { format!("Do you really want to remove role \"{}\"", role.name) }
+            </div>
+            <div class="modal-footer">
+              <button type="button" onclick={&props.close} class="btn btn-secondary">{"Cancel"}</button>
+              <button type="submit" class="btn btn-danger">{"Confirm"}</button>
+            </div>
+        </form>
     )
 }
 
@@ -141,6 +225,7 @@ pub fn roles() -> Html {
 pub struct ManageRoleProps {
     pub role: Option<Role>,
     pub close: Callback<MouseEvent>,
+    pub counter: UseCounterHandle,
 }
 
 #[function_component(ManageRole)]
@@ -211,10 +296,11 @@ pub fn manage_role(props: &ManageRoleProps) -> Html {
     };
 
     {
+        let counter = props.counter.clone();
         use_effect_with_deps(
             move |role_edit| {
                 if let Some(_) = &role_edit.data {
-                    // force refresh
+                    counter.increase();
                 }
                 || ()
             },
@@ -223,11 +309,11 @@ pub fn manage_role(props: &ManageRoleProps) -> Html {
     };
 
     {
+        let counter = props.counter.clone();
         use_effect_with_deps(
             move |role_create| {
-                debug!("run2");
                 if let Some(_) = &role_create.data {
-                    // force refresh
+                    counter.increase();
                 }
                 || ()
             },

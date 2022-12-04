@@ -43,7 +43,10 @@ where
     T: DeserializeOwned + 'static + std::fmt::Debug,
     B: Serialize + std::fmt::Debug,
 {
-    let allow_body = method == reqwest::Method::POST || method == reqwest::Method::PUT;
+    let allow_body = method == reqwest::Method::POST
+        || method == reqwest::Method::PUT
+        || method == reqwest::Method::PATCH
+        || method == reqwest::Method::DELETE;
     let url = format!("{}{}", API_ROOT, url);
     let mut builder = reqwest::Client::new().request(method, &url);
     if let Some(token) = get_token() {
@@ -125,11 +128,12 @@ where
 
 /// Delete request
 #[allow(dead_code)]
-pub async fn request_delete<T>(url: String) -> Result<T, Error>
+pub async fn request_delete<B, T>(url: String, body: B) -> Result<T, Error>
 where
     T: DeserializeOwned + 'static + std::fmt::Debug,
+    B: Serialize + std::fmt::Debug,
 {
-    request(reqwest::Method::DELETE, url, ()).await
+    request(reqwest::Method::DELETE, url, body).await
 }
 
 /// Get request

@@ -1,8 +1,9 @@
 use crate::error::Error;
-use crate::services::requests::{request_get, request_post, request_put};
+use crate::services::requests::{request_delete, request_get, request_post, request_put};
 use crate::types::auth::ApiResult;
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
+use tracing::debug;
 
 #[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, Default)]
 pub struct User {
@@ -25,6 +26,11 @@ pub struct RoleInfo {
     pub name: String,
     pub description: String,
     pub permissions: HashSet<String>,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, Default, PartialEq, Eq)]
+pub struct RoleId {
+    pub id: i32,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, Default)]
@@ -52,4 +58,9 @@ pub async fn create_role(new_role: RoleInfo) -> Result<ApiResult, Error> {
 
 pub async fn edit_role(role: RoleInfo) -> Result<ApiResult, Error> {
     request_put::<RoleInfo, ApiResult>("/admin/roles".to_string(), role).await
+}
+
+pub async fn delete_role(role: RoleId) -> Result<ApiResult, Error> {
+    debug!("Data sent: {:?}", role);
+    request_delete::<RoleId, ApiResult>("/admin/roles".to_string(), role).await
 }
