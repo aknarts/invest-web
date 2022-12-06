@@ -30,15 +30,19 @@ pub fn register() -> Html {
         let rs = registering_state.clone();
         use_effect_with_deps(
             move |user_register| {
-                if let Some(user_info) = &user_register.data {
-                    bt.set(false);
-                    rs.set(false);
-                    user_ctx.register(user_info.clone());
-                } else if user_register.error.is_some() {
-                    bt.set(false);
-                    rs.set(false);
-                }
-                || ()
+                user_register.data.as_ref().map_or_else(
+                    || {
+                        if user_register.error.is_some() {
+                            bt.set(false);
+                            rs.set(false);
+                        }
+                    },
+                    |user_info| {
+                        bt.set(false);
+                        rs.set(false);
+                        user_ctx.register(user_info.clone());
+                    },
+                );
             },
             user_register.clone(),
         );

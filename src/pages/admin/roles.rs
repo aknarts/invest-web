@@ -1,7 +1,7 @@
 use crate::app::Route;
 use crate::columns;
 use crate::components::modal::Modal;
-use crate::components::table::table::{Table, TableData};
+use crate::components::table::types::{Table, TableData};
 use crate::error::Error;
 use crate::hooks::use_user_context;
 use crate::services::admin::{
@@ -76,7 +76,7 @@ pub fn role_list(props: &RoleListProp) -> HtmlResult {
                     description: role.description.clone(),
                     role: role.clone(),
                     counter: WrapCounter(Some(props.counter.clone())),
-                })
+                });
             }
 
             html! (
@@ -175,7 +175,7 @@ impl TableData for RoleLine {
             "actions" => {
                 html!(
                     <>
-                        <ActionLine role={self.role.clone()} counter={self.counter.0.clone().unwrap().clone()}/>
+                        <ActionLine role={self.role.clone()} counter={self.counter.0.clone().unwrap()}/>
                     </>
                 )
             }
@@ -191,7 +191,7 @@ impl TableData for RoleLine {
         field_name: &str,
     ) -> crate::components::table::error::Result<Value> {
         let value = match field_name {
-            "id" => serde_value::to_value(&self.role.id),
+            "id" => serde_value::to_value(self.role.id),
             "name" => serde_value::to_value(&self.role.name),
             "description" => serde_value::to_value(&self.role.description),
             &_ => serde_value::to_value(""),
@@ -201,12 +201,9 @@ impl TableData for RoleLine {
 
     fn matches_search(&self, needle: Option<String>) -> bool {
         debug!("Searching: {:?}", needle);
-        match needle {
-            None => {
-                return true;
-            }
-            Some(search) => self.name.to_lowercase().contains(&search.to_lowercase()),
-        }
+        needle.map_or(true, |search| {
+            self.name.to_lowercase().contains(&search.to_lowercase())
+        })
     }
 }
 
@@ -287,8 +284,8 @@ pub fn delete_role(props: &DeleteRoleProps) -> Html {
     let role = props.role.as_ref().map_or(
         Role {
             id: -1,
-            name: "".to_string(),
-            description: "".to_string(),
+            name: String::new(),
+            description: String::new(),
             permissions: None,
         },
         Clone::clone,
@@ -313,13 +310,13 @@ pub fn delete_role(props: &DeleteRoleProps) -> Html {
         let counter = props.counter.clone();
         use_effect_with_deps(
             move |role_delete| {
-                if let Some(_) = &role_delete.data {
+                if role_delete.data.is_some() {
                     counter.increase();
                 }
                 || ()
             },
             role_delete,
-        )
+        );
     };
 
     html!(
@@ -347,8 +344,8 @@ pub fn manage_role(props: &ManageRoleProps) -> Html {
     let role = props.role.as_ref().map_or(
         Role {
             id: -1,
-            name: "".to_string(),
-            description: "".to_string(),
+            name: String::new(),
+            description: String::new(),
             permissions: None,
         },
         Clone::clone,
@@ -413,20 +410,20 @@ pub fn manage_role(props: &ManageRoleProps) -> Html {
         let counter = props.counter.clone();
         use_effect_with_deps(
             move |role_edit| {
-                if let Some(_) = &role_edit.data {
+                if role_edit.data.is_some() {
                     counter.increase();
                 }
                 || ()
             },
             role_edit,
-        )
+        );
     };
 
     {
         let counter = props.counter.clone();
         use_effect_with_deps(
             move |role_create| {
-                if let Some(_) = &role_create.data {
+                if role_create.data.is_some() {
                     counter.increase();
                 }
                 || ()

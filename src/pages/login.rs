@@ -34,15 +34,19 @@ pub fn login() -> Html {
         let ls = login_state.clone();
         use_effect_with_deps(
             move |user_login| {
-                if let Some(user_info) = &user_login.data {
-                    bt.set(false);
-                    ls.set(false);
-                    user_ctx.login(user_info.clone());
-                } else if user_login.error.is_some() {
-                    bt.set(false);
-                    ls.set(false);
-                }
-                || ()
+                user_login.data.as_ref().map_or_else(
+                    || {
+                        if user_login.error.is_some() {
+                            bt.set(false);
+                            ls.set(false);
+                        }
+                    },
+                    |user_info| {
+                        bt.set(false);
+                        ls.set(false);
+                        user_ctx.login(user_info.clone());
+                    },
+                );
             },
             user_login.clone(),
         );

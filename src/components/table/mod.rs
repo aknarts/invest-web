@@ -1,16 +1,16 @@
-pub(crate) mod error;
+pub mod error;
 mod macros;
-pub mod table;
+pub mod types;
 
 use std::cmp::Reverse;
-use table::*;
 use tracing::debug;
+use types::{Column, Table, TableData, TableOrder, TableState};
 use yew::html;
 use yew::prelude::*;
 
 /// Properties of the Table component.
-#[derive(Properties, Clone, PartialEq, Default)]
-pub struct TableProps<T>
+#[derive(Properties, Clone, Eq, PartialEq, Default)]
+pub struct Props<T>
 where
     T: TableData,
 {
@@ -34,16 +34,16 @@ where
     T: TableData,
 {
     type Message = Msg;
-    type Properties = TableProps<T>;
+    type Properties = Props<T>;
 
     fn create(ctx: &Context<Self>) -> Self {
         debug!("Create triggered");
         let props = ctx.props();
         let column_number = props.columns.len();
-        Table {
+        Self {
             columns: props.columns.clone(),
             data: props.data.clone(),
-            orderable: props.orderable.clone(),
+            orderable: props.orderable,
             state: TableState {
                 order: vec![TableOrder::default(); column_number],
             },
@@ -53,30 +53,36 @@ where
     fn update(&mut self, _ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
             Msg::SortColumn(i) => {
-                use TableOrder::*;
+                use TableOrder::{Ascending, Descending, Unordered};
 
                 for (j, x) in self.state.order.iter_mut().enumerate() {
-                    if j != i {
-                        *x = Unordered
+                    if j == i {
+                        *x = x.rotate();
                     } else {
-                        *x = x.rotate()
+                        *x = Unordered;
                     }
                 }
 
-                match self.columns[i].data_property.as_ref() {
-                    Some(f) => {
-                        match self.state.order[i] {
-                            Unordered => self.data.sort(),
-                            Ascending => self
-                                .data
-                                .sort_by_cached_key(|x| x.get_field_as_value(&f).unwrap()),
-                            Descending => self
-                                .data
-                                .sort_by_cached_key(|x| Reverse(x.get_field_as_value(&f).unwrap())),
-                        }
-                        true
-                    }
+                match self.columns.get(i) {
                     None => false,
+                    Some(column) => match column.data_property.as_ref() {
+                        Some(f) => match self.state.order.get(i) {
+                            Some(order) => {
+                                match order {
+                                    Unordered => self.data.sort(),
+                                    Ascending => self
+                                        .data
+                                        .sort_by_cached_key(|x| x.get_field_as_value(f).unwrap()),
+                                    Descending => self.data.sort_by_cached_key(|x| {
+                                        Reverse(x.get_field_as_value(f).unwrap())
+                                    }),
+                                }
+                                true
+                            }
+                            None => false,
+                        },
+                        None => false,
+                    },
                 }
             }
         }
@@ -88,10 +94,10 @@ where
         html! (
             <table class={classes!(classes)}>
                 <thead>
-                    { for self.columns.iter().enumerate().map(|(i, col)| self.view_column(&ctx, i, &col)) }
+                    { for self.columns.iter().enumerate().map(|(i, col)| self.view_column(ctx, i, col)) }
                 </thead>
                 <tbody>
-                    { for self.data.iter().map(|d| self.view_row(&d, search.clone())) }
+                    { for self.data.iter().map(|d| self.view_row(d, search.clone())) }
                 </tbody>
             </table>
         )
@@ -104,12 +110,12 @@ where
 {
     fn view_column<'a>(&'a self, ctx: &Context<Self>, index: usize, column: &'a Column) -> Html {
         let get_header_sorting_class = |index: usize| {
-            use TableOrder::*;
-            match self.state.order[index] {
+            use TableOrder::{Ascending, Descending, Unordered};
+            self.state.order.get(index).map_or("", |order| match order {
                 Unordered => "fa-sort",
                 Ascending => "fa-sort-up",
                 Descending => "fa-sort-down",
-            }
+            })
         };
 
         let th_view = |child| {
@@ -138,7 +144,7 @@ where
                         for self.columns.iter()
                             .map(|c| { c.data_property.as_ref().unwrap_or(&c.name) })
                             .map(|name| { row.get_field_as_html(name) })
-                            .filter_map(|h| h.ok())
+                            .filter_map(std::result::Result::ok)
                             .map(|el| html! { <td>{ el }</td> })
                     }
                 </tr>

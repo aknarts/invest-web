@@ -1,4 +1,4 @@
-use super::error::*;
+use super::error::Result;
 use serde::Serialize;
 use serde_value::Value;
 use std::fmt;
@@ -14,7 +14,7 @@ pub trait TableData: 'static + Default + Clone + Ord + Serialize {
     fn matches_search(&self, needle: Option<String>) -> bool;
 }
 
-#[derive(Clone, PartialEq, Default, Debug)]
+#[derive(Clone, Eq, PartialEq, Default, Debug)]
 pub struct Column {
     pub name: String,
     pub short_name: Option<String>,
@@ -28,7 +28,7 @@ impl fmt::Display for Column {
     }
 }
 
-#[derive(Copy, Clone, PartialEq)]
+#[derive(Copy, Clone, Eq, PartialEq)]
 pub enum TableOrder {
     Unordered = 0,
     Ascending,
@@ -37,14 +37,14 @@ pub enum TableOrder {
 
 impl Default for TableOrder {
     fn default() -> Self {
-        TableOrder::Unordered
+        Self::Unordered
     }
 }
 
 impl TableOrder {
-    pub fn rotate(&self) -> Self {
-        use TableOrder::*;
-        match *self {
+    pub const fn rotate(self) -> Self {
+        use TableOrder::{Ascending, Descending, Unordered};
+        match self {
             Unordered => Ascending,
             Ascending => Descending,
             Descending => Unordered,
@@ -52,13 +52,13 @@ impl TableOrder {
     }
 }
 
-#[derive(Clone, PartialEq, Default)]
+#[derive(Clone, Eq, PartialEq, Default)]
 pub struct TableState {
     pub order: Vec<TableOrder>,
 }
 
 /// The a table with columns holding data.
-#[derive(Clone, PartialEq, Default)]
+#[derive(Clone, Eq, PartialEq, Default)]
 pub struct Table<T>
 where
     T: TableData,
