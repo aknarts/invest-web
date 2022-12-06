@@ -17,6 +17,7 @@ pub struct Handle {
     history: Navigator,
 }
 
+#[allow(dead_code)]
 pub enum Routes {
     Admin(AdminRoute),
     Default(Route),

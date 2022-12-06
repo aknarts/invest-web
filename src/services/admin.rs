@@ -2,6 +2,7 @@ use crate::error::Error;
 use crate::services::requests::{request_delete, request_get, request_post, request_put};
 use crate::types::auth::ApiResult;
 use serde::{Deserialize, Serialize};
+use std::cmp::Ordering;
 use std::collections::HashSet;
 use tracing::debug;
 
@@ -18,6 +19,18 @@ pub struct Role {
     pub name: String,
     pub description: String,
     pub permissions: Option<Vec<Permission>>,
+}
+
+impl Ord for Role {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.name.cmp(&other.name)
+    }
+}
+
+impl PartialOrd for Role {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.name.cmp(&other.name))
+    }
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default, PartialEq, Eq)]
@@ -38,6 +51,18 @@ pub struct Permission {
     pub id: i32,
     pub name: String,
     pub description: String,
+}
+
+impl Ord for Permission {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.name.cmp(&other.name)
+    }
+}
+
+impl PartialOrd for Permission {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.name.cmp(&other.name))
+    }
 }
 
 pub async fn get_user_list() -> Result<Vec<User>, Error> {

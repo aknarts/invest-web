@@ -1,10 +1,15 @@
 use crate::app::Route;
+use crate::columns;
 use crate::components::modal::Modal;
+use crate::components::table::table::{Table, TableData};
 use crate::error::Error;
 use crate::hooks::use_user_context;
 use crate::services::admin::{
     create_role, edit_role, get_permissions_list, get_role_list, Permission, Role, RoleId, RoleInfo,
 };
+use serde::{Serialize, Serializer};
+use serde_value::Value;
+use std::cmp::Ordering;
 use std::collections::HashSet;
 use tracing::debug;
 use web_sys::HtmlInputElement;
@@ -29,8 +34,21 @@ pub fn role_list(props: &RoleListProp) -> HtmlResult {
     let user_ctx = use_user_context();
     let history = use_navigator().unwrap();
     let active = use_state(|| false);
-
+    let search_term = use_state(|| None::<String>);
+    let search = (*search_term).as_ref().cloned();
     let act = *active;
+    debug!("search: {:?}", search);
+
+    let oninput_search = {
+        Callback::from(move |e: InputEvent| {
+            let input: HtmlInputElement = e.target_unchecked_into();
+            if input.value().is_empty() {
+                search_term.set(None);
+            } else {
+                search_term.set(Some(input.value()));
+            }
+        })
+    };
 
     let onclick = {
         Callback::from(move |_| {
@@ -40,38 +58,52 @@ pub fn role_list(props: &RoleListProp) -> HtmlResult {
 
     let html_result = match *res {
         Ok(ref list) => {
+            let columns = columns![("id", "id", "#", true)("name", "Name", "Name", true)(
+                "description",
+                "Description",
+                "Description",
+                true
+            )("actions", "Actions")];
+
+            let mut data = Vec::new();
+            for role in list.iter() {
+                if role.name.eq("admin") {
+                    continue;
+                }
+                data.push(RoleLine {
+                    id: role.id,
+                    name: role.name.clone(),
+                    description: role.description.clone(),
+                    role: role.clone(),
+                    counter: WrapCounter(Some(props.counter.clone())),
+                })
+            }
+
             html! (
                 <div>
+                    <div class="d-flex">
+                        <div class="flex-grow-1 p-2 input-group mb-2">
+                                <span class="input-group-text">
+                                  <i class="fas fa-search"></i>
+                                </span>
+                                <input
+                                    class="form-control"
+                                    type="text"
+                                    id="search"
+                                    placeholder="Search"
+                                    oninput={oninput_search}
+                                    />
+                        </div>
                     if user_ctx.check_permission("create_role") {
-                        <div class="d-flex flex-row-reverse m-1">
+                        <div class="flex-shrink-0 p-2">
                             <button type="button" onclick={&onclick} class="btn btn-success">{ "Add Role" }</button>
                         </div>
                         <Modal close={&onclick} active={act} title="Create new role" >
                             <ManageRole close={&onclick} counter={props.counter.clone()}/>
                         </Modal>
                     }
-                    <table class="table table-hover">
-                      <thead>
-                        <tr>
-                          <th scope="col">{"#"}</th>
-                          <th scope="col">{"Name"}</th>
-                          <th scope="col">{"Description"}</th>
-                          <th scope="col">{"Actions"}</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {
-                            for list.iter().map(|role| {
-                                    if role.name.eq("admin"){
-                                        html!()
-                                    } else {
-                                        html!(<RoleLine role={role.clone()} counter={props.counter.clone()}/>)
-                                    }
-                                }
-                            )
-                        }
-                      </tbody>
-                    </table>
+                    </div>
+                    <Table<RoleLine> {search} classes={classes!("table", "table-hover")} columns={columns} data={data} orderable={true}/>
                 </div>
             )
         }
@@ -91,14 +123,101 @@ pub fn role_list(props: &RoleListProp) -> HtmlResult {
     Ok(html_result)
 }
 
+#[derive(Default, Clone)]
+struct WrapCounter(Option<UseCounterHandle>);
+
+impl PartialEq<Self> for WrapCounter {
+    fn eq(&self, _: &Self) -> bool {
+        true
+    }
+}
+
+impl Eq for WrapCounter {}
+
+impl Serialize for WrapCounter {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        serializer.serialize_i8(0)
+    }
+}
+
+#[derive(Default, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize)]
+struct RoleLine {
+    pub id: i32,
+    pub name: String,
+    pub description: String,
+    #[serde(skip_serializing)]
+    pub role: Role,
+    #[serde(skip_serializing)]
+    pub counter: WrapCounter,
+}
+
+impl Ord for WrapCounter {
+    fn cmp(&self, _: &Self) -> Ordering {
+        Ordering::Equal
+    }
+}
+
+impl PartialOrd for WrapCounter {
+    fn partial_cmp(&self, _: &Self) -> Option<Ordering> {
+        Some(Ordering::Equal)
+    }
+}
+
+impl TableData for RoleLine {
+    fn get_field_as_html(&self, field_name: &str) -> crate::components::table::error::Result<Html> {
+        let html = match field_name {
+            "id" => html!({ &self.id }),
+            "name" => html!({ &self.name }),
+            "description" => html!({ &self.description }),
+            "actions" => {
+                html!(
+                    <>
+                        <ActionLine role={self.role.clone()} counter={self.counter.0.clone().unwrap().clone()}/>
+                    </>
+                )
+            }
+            &_ => {
+                html!()
+            }
+        };
+        Ok(html)
+    }
+
+    fn get_field_as_value(
+        &self,
+        field_name: &str,
+    ) -> crate::components::table::error::Result<Value> {
+        let value = match field_name {
+            "id" => serde_value::to_value(&self.role.id),
+            "name" => serde_value::to_value(&self.role.name),
+            "description" => serde_value::to_value(&self.role.description),
+            &_ => serde_value::to_value(""),
+        };
+        Ok(value.unwrap())
+    }
+
+    fn matches_search(&self, needle: Option<String>) -> bool {
+        debug!("Searching: {:?}", needle);
+        match needle {
+            None => {
+                return true;
+            }
+            Some(search) => self.name.to_lowercase().contains(&search.to_lowercase()),
+        }
+    }
+}
+
 #[derive(Properties, PartialEq)]
-pub struct RoleLineProp {
+pub struct ActionLineProp {
     pub role: Role,
     pub counter: UseCounterHandle,
 }
 
-#[function_component(RoleLine)]
-fn role_line(props: &RoleLineProp) -> Html {
+#[function_component(ActionLine)]
+fn role_line(props: &ActionLineProp) -> Html {
     let edit = use_state(|| false);
     let ed = *edit;
     let delete = use_state(|| false);
@@ -119,11 +238,7 @@ fn role_line(props: &RoleLineProp) -> Html {
     };
 
     html!(
-        <tr>
-          <th scope="row">{&props.role.id}</th>
-          <td>{&props.role.name}</td>
-          <td>{&props.role.description}</td>
-          <td>
+        <>
             <button type="button" onclick={&onclick} class="btn btn-primary mx-1">{ "Edit" }</button>
             <button type="button" onclick={&onclick_delete} class="btn btn-danger mx-1">{"Remove"}</button>
             <Modal close={&onclick} active={ed} title="Edit role" >
@@ -132,8 +247,7 @@ fn role_line(props: &RoleLineProp) -> Html {
             <Modal close={&onclick_delete} active={del} title="Delete role" >
                 <DeleteRole role={props.role.clone()} close={&onclick_delete} counter={props.counter.clone()}/>
             </Modal>
-          </td>
-        </tr>
+        </>
     )
 }
 
