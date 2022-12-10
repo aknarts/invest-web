@@ -3,17 +3,16 @@ mod macros;
 pub mod types;
 
 use std::cmp::Reverse;
-use tracing::debug;
 use types::{Column, Table, TableData, TableOrder, TableState};
 use yew::html;
 use yew::prelude::*;
 
 #[derive(Clone, Eq, PartialEq, Default)]
 pub struct TableOptions {
-    unordered_class: Option<String>,
-    ascending_class: Option<String>,
-    descending_class: Option<String>,
-    orderable_classes: Vec<String>
+    pub unordered_class: Option<String>,
+    pub ascending_class: Option<String>,
+    pub descending_class: Option<String>,
+    pub orderable_classes: Vec<String>
 }
 
 /// Properties of the Table component.
@@ -127,11 +126,13 @@ where
                 Descending => ctx.props().options.descending_class.clone(),
             })
         };
+
+
         let th_view = |child| {
             if self.orderable && column.orderable {
-                html! ( <th scope="col" onclick={ctx.link().callback(move |_| Msg::SortColumn(index))}>{ child }</th> )
+                html! ( <th class={classes!(column.header_classes.clone())} scope="col" onclick={ctx.link().callback(move |_| Msg::SortColumn(index))}>{ child }</th> )
             } else {
-                html! ( <th scope="col">{ child }</th> )
+                html! ( <th class={classes!(column.header_classes.clone())} scope="col">{ child }</th> )
             }
         };
 

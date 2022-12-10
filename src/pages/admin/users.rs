@@ -8,8 +8,8 @@ use yew::prelude::*;
 use yew::suspense::{use_future, SuspensionResult, UseFutureHandle};
 use yew_router::hooks::use_navigator;
 use serde::{Serialize};
-use crate::columns;
-use crate::components::table::types::{Table, TableData};
+use crate::components::table::TableOptions;
+use crate::components::table::types::{ColumnBuilder, Table, TableData};
 
 #[hook]
 fn use_user_list() -> SuspensionResult<UseFutureHandle<Result<Vec<User>, Error>>> {
@@ -36,12 +36,25 @@ pub fn user_list() -> HtmlResult {
 
     let html_result = match *res {
         Ok(ref list) => {
-            let columns = columns![("id", "id", "#", true)("username", "Username", "Username", true)(
-                "email",
-                "Email",
-                "Email",
-                true
-            )("actions", "Actions")];
+            let columns = vec![ColumnBuilder::new("id")
+                                   .orderable(true)
+                                   .short_name("#")
+                                   .data_property("id")
+                                   .header_class("user-select-none")
+                                   .build(),
+                               ColumnBuilder::new("username")
+                                   .orderable(true)
+                                   .short_name("Username")
+                                   .data_property("username")
+                                   .header_class("user-select-none")
+                                   .build(),
+                               ColumnBuilder::new("email")
+                                   .orderable(true)
+                                   .short_name("Email")
+                                   .data_property("email")
+                                   .header_class("user-select-none")
+                                   .build(),
+                               ColumnBuilder::new("Actions").header_class("user-select-none").build()];
 
             let mut data = Vec::new();
             for user in list.iter() {
@@ -52,6 +65,13 @@ pub fn user_list() -> HtmlResult {
                     user: user.clone(),
                 });
             }
+
+            let options = TableOptions {
+                unordered_class: Some("fa-sort".to_string()),
+                ascending_class: Some("fa-sort-up".to_string()),
+                descending_class: Some("fa-sort-down".to_string()),
+                orderable_classes: vec!["mx-1".to_string(), "fa-solid".to_string()],
+            };
 
             html!(
                 <div>
@@ -69,7 +89,7 @@ pub fn user_list() -> HtmlResult {
                                         />
                             </div>
                     </div>
-                    <Table<UserLine> {search} classes={classes!("table", "table-hover")} columns={columns} data={data} orderable={true}/>
+                    <Table<UserLine> {options} {search} classes={classes!("table", "table-hover")} columns={columns} data={data} orderable={true}/>
                 </div>
             )
         }

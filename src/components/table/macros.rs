@@ -7,7 +7,6 @@ macro_rules! column {
             short_name: Some($a.to_string()),
             orderable: false,
             header_classes: vec![],
-            data_classes: vec![],
         }
     }};
     ($a:expr, $b:expr) => {{
@@ -17,7 +16,6 @@ macro_rules! column {
             short_name: Some($b.to_string()),
             orderable: false,
             header_classes: vec![],
-            data_classes: vec![],
         }
     }};
     ($a:expr, $b:expr, $c:expr) => {
@@ -27,7 +25,6 @@ macro_rules! column {
             short_name: Some($c.to_string()),
             orderable: false,
             header_classes: vec![],
-            data_classes: vec![],
         }
     };
     ($a:expr, $b:expr, $c:expr, $d:expr) => {
@@ -37,7 +34,6 @@ macro_rules! column {
             short_name: Some($c.to_string()),
             orderable: $d,
             header_classes: vec![],
-            data_classes: vec![],
         }
     };
 }

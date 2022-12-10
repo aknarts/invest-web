@@ -7,12 +7,12 @@ use yew::suspense::{SuspensionResult, use_future, UseFutureHandle};
 use yew_hooks::UseCounterHandle;
 use yew_router::prelude::use_navigator;
 use crate::app::Route;
-use crate::columns;
 use super::role_modal::ManageRole;
 use serde_value::Value;
 use super::delete_role_modal::DeleteRole;
 use crate::components::modal::Modal;
-use crate::components::table::types::{Table, TableData};
+use crate::components::table::TableOptions;
+use crate::components::table::types::{ColumnBuilder, Table, TableData};
 use crate::services::admin::{get_role_list, Role};
 use crate::error::Error;
 use crate::hooks::use_user_context;
@@ -57,12 +57,22 @@ pub fn role_list(props: &RoleListProp) -> HtmlResult {
 
     let html_result = match *res {
         Ok(ref list) => {
-            let columns = columns![("id", "id", "#", true)("name", "Name", "Name", true)(
-                "description",
-                "Description",
-                "Description",
-                true
-            )("actions", "Actions")];
+            let columns = vec![ColumnBuilder::new("id")
+                                   .orderable(true)
+                                   .short_name("#")
+                                   .data_property("id")
+                                   .header_class("user-select-none")
+                                   .build(), ColumnBuilder::new("name")
+                                   .orderable(true)
+                                   .short_name("Name")
+                                   .data_property("name")
+                                   .header_class("user-select-none")
+                                   .build(),ColumnBuilder::new("description")
+                .orderable(true)
+                .short_name("Description")
+                .data_property("description")
+                .header_class("user-select-none")
+                .build(), ColumnBuilder::new("Actions").header_class("user-select-none").build()];
 
             let mut data = Vec::new();
             for role in list.iter() {
@@ -77,6 +87,13 @@ pub fn role_list(props: &RoleListProp) -> HtmlResult {
                     counter: WrapCounter(Some(props.counter.clone())),
                 });
             }
+
+            let options = TableOptions {
+                unordered_class: Some("fa-sort".to_string()),
+                ascending_class: Some("fa-sort-up".to_string()),
+                descending_class: Some("fa-sort-down".to_string()),
+                orderable_classes: vec!["mx-1".to_string(), "fa-solid".to_string()],
+            };
 
             html!(
                 <div>
@@ -102,7 +119,7 @@ pub fn role_list(props: &RoleListProp) -> HtmlResult {
                         </Modal>
                     }
                     </div>
-                    <Table<RoleLine> {search} classes={classes!("table", "table-hover")} columns={columns} data={data} orderable={true}/>
+                    <Table<RoleLine> {options} {search} classes={classes!("table", "table-hover")} columns={columns} data={data} orderable={true}/>
                 </div>
             )
         }

@@ -21,7 +21,6 @@ pub struct Column {
     pub data_property: Option<String>,
     pub orderable: bool,
     pub header_classes: Vec<String>,
-    pub data_classes: Vec<String>,
 }
 
 impl fmt::Display for Column {
@@ -32,23 +31,21 @@ impl fmt::Display for Column {
 
 #[derive(Default)]
 pub struct ColumnBuilder {
-    pub name: String,
-    pub short_name: Option<String>,
-    pub data_property: Option<String>,
-    pub orderable: bool,
-    pub header_classes: Vec<String>,
-    pub data_classes: Vec<String>,
+    name: String,
+    short_name: Option<String>,
+    data_property: Option<String>,
+    orderable: bool,
+    header_classes: Vec<String>,
 }
 
 impl ColumnBuilder {
-    pub fn new(name: String) -> ColumnBuilder {
+    pub fn new(name: &str) -> ColumnBuilder {
         ColumnBuilder {
-            name,
+            name: name.to_string(),
             short_name: None,
             data_property: None,
             orderable: false,
             header_classes: vec![],
-            data_classes: vec![],
         }
     }
 
@@ -59,7 +56,6 @@ impl ColumnBuilder {
             data_property: self.data_property,
             orderable: self.orderable,
             header_classes: self.header_classes,
-            data_classes: self.data_classes,
         }
     }
 
@@ -68,23 +64,18 @@ impl ColumnBuilder {
         self
     }
 
-    pub fn data_property(mut self, data_property: Option<String>) -> ColumnBuilder {
-        self.data_property = data_property;
+    pub fn data_property(mut self, data_property: &str) -> ColumnBuilder {
+        self.data_property = Some(data_property.to_string());
         self
     }
 
-    pub fn short_name(mut self, short_name: Option<String>) -> ColumnBuilder {
-        self.short_name = short_name;
+    pub fn short_name(mut self, short_name: &str) -> ColumnBuilder {
+        self.short_name = Some(short_name.to_string());
         self
     }
 
-    pub fn header_class(mut self, class: String) -> ColumnBuilder {
-        self.header_classes.push(class);
-        self
-    }
-
-    pub fn data_class(mut self, class: String) -> ColumnBuilder {
-        self.data_classes.push(class);
+    pub fn header_class(mut self, class: &str) -> ColumnBuilder {
+        self.header_classes.push(class.to_string());
         self
     }
 }
