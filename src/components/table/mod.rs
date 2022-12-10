@@ -8,6 +8,14 @@ use types::{Column, Table, TableData, TableOrder, TableState};
 use yew::html;
 use yew::prelude::*;
 
+#[derive(Clone, Eq, PartialEq, Default)]
+pub struct TableOptions {
+    unordered_class: Option<String>,
+    ascending_class: Option<String>,
+    descending_class: Option<String>,
+    orderable_classes: Vec<String>
+}
+
 /// Properties of the Table component.
 #[derive(Properties, Clone, Eq, PartialEq, Default)]
 pub struct Props<T>
@@ -22,6 +30,8 @@ where
     pub classes: Classes,
     #[prop_or_default]
     pub search: Option<String>,
+    #[prop_or_default]
+    pub options: TableOptions,
 }
 
 #[derive(Debug)]
@@ -37,7 +47,6 @@ where
     type Properties = Props<T>;
 
     fn create(ctx: &Context<Self>) -> Self {
-        debug!("Create triggered");
         let props = ctx.props();
         let column_number = props.columns.len();
         Self {
@@ -111,13 +120,13 @@ where
     fn view_column<'a>(&'a self, ctx: &Context<Self>, index: usize, column: &'a Column) -> Html {
         let get_header_sorting_class = |index: usize| {
             use TableOrder::{Ascending, Descending, Unordered};
-            self.state.order.get(index).map_or("", |order| match order {
-                Unordered => "fa-sort",
-                Ascending => "fa-sort-up",
-                Descending => "fa-sort-down",
+
+            self.state.order.get(index).map_or(None, |order| match order {
+                Unordered => ctx.props().options.unordered_class.clone(),
+                Ascending => ctx.props().options.ascending_class.clone(),
+                Descending => ctx.props().options.descending_class.clone(),
             })
         };
-
         let th_view = |child| {
             if self.orderable && column.orderable {
                 html! ( <th scope="col" onclick={ctx.link().callback(move |_| Msg::SortColumn(index))}>{ child }</th> )
@@ -130,7 +139,7 @@ where
                 <span>
                     { column }
                     if self.orderable && column.orderable {
-                        <i class={classes!("mx-1","fa-solid", get_header_sorting_class(index))}></i>
+                        <i class={classes!(ctx.props().options.orderable_classes.clone(), get_header_sorting_class(index))}></i>
                     }
                 </span>
         ))

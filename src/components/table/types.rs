@@ -20,11 +20,72 @@ pub struct Column {
     pub short_name: Option<String>,
     pub data_property: Option<String>,
     pub orderable: bool,
+    pub header_classes: Vec<String>,
+    pub data_classes: Vec<String>,
 }
 
 impl fmt::Display for Column {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}", self.short_name.as_ref().unwrap_or(&self.name))
+    }
+}
+
+#[derive(Default)]
+pub struct ColumnBuilder {
+    pub name: String,
+    pub short_name: Option<String>,
+    pub data_property: Option<String>,
+    pub orderable: bool,
+    pub header_classes: Vec<String>,
+    pub data_classes: Vec<String>,
+}
+
+impl ColumnBuilder {
+    pub fn new(name: String) -> ColumnBuilder {
+        ColumnBuilder {
+            name,
+            short_name: None,
+            data_property: None,
+            orderable: false,
+            header_classes: vec![],
+            data_classes: vec![],
+        }
+    }
+
+    pub fn build(self) -> Column {
+        Column {
+            name: self.name,
+            short_name: self.short_name,
+            data_property: self.data_property,
+            orderable: self.orderable,
+            header_classes: self.header_classes,
+            data_classes: self.data_classes,
+        }
+    }
+
+    pub fn orderable(mut self, orderable: bool) -> ColumnBuilder {
+        self.orderable = orderable;
+        self
+    }
+
+    pub fn data_property(mut self, data_property: Option<String>) -> ColumnBuilder {
+        self.data_property = data_property;
+        self
+    }
+
+    pub fn short_name(mut self, short_name: Option<String>) -> ColumnBuilder {
+        self.short_name = short_name;
+        self
+    }
+
+    pub fn header_class(mut self, class: String) -> ColumnBuilder {
+        self.header_classes.push(class);
+        self
+    }
+
+    pub fn data_class(mut self, class: String) -> ColumnBuilder {
+        self.data_classes.push(class);
+        self
     }
 }
 
@@ -60,8 +121,8 @@ pub struct TableState {
 /// The a table with columns holding data.
 #[derive(Clone, Eq, PartialEq, Default)]
 pub struct Table<T>
-where
-    T: TableData,
+    where
+        T: TableData,
 {
     /// The order of the columns determines the order in which they are displayed.
     pub columns: Vec<Column>,

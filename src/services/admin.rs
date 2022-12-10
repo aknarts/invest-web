@@ -6,7 +6,7 @@ use std::cmp::Ordering;
 use std::collections::HashSet;
 use tracing::debug;
 
-#[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, Default)]
+#[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, PartialOrd, Ord, Default)]
 pub struct User {
     pub id: i64,
     pub email: String,

@@ -1,10 +1,15 @@
+use serde_value::Value;
 use crate::app::Route;
 use crate::error::Error;
 use crate::services::admin::{get_user_list, User};
 use tracing::debug;
+use web_sys::HtmlInputElement;
 use yew::prelude::*;
 use yew::suspense::{use_future, SuspensionResult, UseFutureHandle};
 use yew_router::hooks::use_navigator;
+use serde::{Serialize};
+use crate::columns;
+use crate::components::table::types::{Table, TableData};
 
 #[hook]
 fn use_user_list() -> SuspensionResult<UseFutureHandle<Result<Vec<User>, Error>>> {
@@ -15,25 +20,56 @@ fn use_user_list() -> SuspensionResult<UseFutureHandle<Result<Vec<User>, Error>>
 pub fn user_list() -> HtmlResult {
     let res = use_user_list()?;
     let history = use_navigator().unwrap();
+    let search_term = use_state(|| None::<String>);
+    let search = (*search_term).as_ref().cloned();
+
+    let oninput_search = {
+        Callback::from(move |e: InputEvent| {
+            let input: HtmlInputElement = e.target_unchecked_into();
+            if input.value().is_empty() {
+                search_term.set(None);
+            } else {
+                search_term.set(Some(input.value()));
+            }
+        })
+    };
+
     let html_result = match *res {
         Ok(ref list) => {
-            html! (
+            let columns = columns![("id", "id", "#", true)("username", "Username", "Username", true)(
+                "email",
+                "Email",
+                "Email",
+                true
+            )("actions", "Actions")];
+
+            let mut data = Vec::new();
+            for user in list.iter() {
+                data.push(UserLine {
+                    id: user.id,
+                    username: user.username.clone(),
+                    email: user.email.clone(),
+                    user: user.clone(),
+                });
+            }
+
+            html!(
                 <div>
-                    <table class="table table-hover">
-                      <thead>
-                        <tr>
-                          <th scope="col">{"#"}</th>
-                          <th scope="col">{"Username"}</th>
-                          <th scope="col">{"Email"}</th>
-                          <th scope="col">{"Actions"}</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {
-                            for list.iter().map(|user| {user_line(user)})
-                        }
-                      </tbody>
-                    </table>
+                    <div class="d-flex">
+                            <div class="flex-grow-1 p-2 input-group mb-2">
+                                    <span class="input-group-text">
+                                      <i class="fas fa-search"></i>
+                                    </span>
+                                    <input
+                                        class="form-control"
+                                        type="text"
+                                        id="search"
+                                        placeholder="Search"
+                                        oninput={oninput_search}
+                                        />
+                            </div>
+                    </div>
+                    <Table<UserLine> {search} classes={classes!("table", "table-hover")} columns={columns} data={data} orderable={true}/>
                 </div>
             )
         }
@@ -53,20 +89,73 @@ pub fn user_list() -> HtmlResult {
     Ok(html_result)
 }
 
-fn user_line(user: &User) -> Html {
+#[derive(Default, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize)]
+struct UserLine {
+    pub id: i64,
+    pub username: String,
+    pub email: String,
+    #[serde(skip_serializing)]
+    pub user: User,
+}
+
+impl TableData for UserLine {
+    fn get_field_as_html(&self, field_name: &str) -> crate::components::table::error::Result<Html> {
+        let html = match field_name {
+            "id" => html!({ &self.id }),
+            "username" => html!({ &self.username }),
+            "email" => html!({ &self.email }),
+            "actions" => {
+                html!(
+                    <>
+                        <ActionLine user={self.user.clone()}/>
+                    </>
+                )
+            }
+            &_ => {
+                html!()
+            }
+        };
+        Ok(html)
+    }
+
+    fn get_field_as_value(
+        &self,
+        field_name: &str,
+    ) -> crate::components::table::error::Result<Value> {
+        let value = match field_name {
+            "id" => serde_value::to_value(self.id),
+            "username" => serde_value::to_value(&self.username),
+            "email" => serde_value::to_value(&self.email),
+            &_ => serde_value::to_value(""),
+        };
+        Ok(value.unwrap())
+    }
+
+    fn matches_search(&self, needle: Option<String>) -> bool {
+        debug!("Searching: {:?}", needle);
+        needle.map_or(true, |search| {
+            self.username.to_lowercase().contains(&search.to_lowercase()) || self.email.to_lowercase().contains(&search.to_lowercase())
+        })
+    }
+}
+
+#[derive(Properties, Eq, PartialEq)]
+pub struct ActionLineProp {
+    pub user: User,
+}
+
+#[function_component(ActionLine)]
+fn role_line(_props: &ActionLineProp) -> Html {
     html!(
-        <tr>
-          <th scope="row">{&user.id}</th>
-          <td>{&user.username}</td>
-          <td>{&user.email}</td>
-          <td><button type="button" class="btn btn-primary mx-1">{ "Details" }</button></td>
-        </tr>
+        <>
+            <button type="button" class="btn btn-primary mx-1">{ "Details" }</button>
+        </>
     )
 }
 
 #[function_component(Users)]
 pub fn users() -> Html {
-    let fallback = html! (
+    let fallback = html!(
         <div class="d-flex justify-content-center">
             <span class="spinner-border text-secondary" role="status">
               <span class="sr-only">{"Loading..."}</span>
@@ -74,7 +163,7 @@ pub fn users() -> Html {
         </div>
     );
 
-    html! (
+    html!(
         <section class="grid flex-fill border-end border-start border-bottom">
             <Suspense {fallback}>
                 <UserList />
