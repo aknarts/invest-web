@@ -1,15 +1,15 @@
-use serde_value::Value;
 use crate::app::Route;
+use crate::components::table::types::{ColumnBuilder, Table, TableData};
+use crate::components::table::TableOptions;
 use crate::error::Error;
 use crate::services::admin::{get_user_list, User};
+use serde::Serialize;
+use serde_value::Value;
 use tracing::debug;
 use web_sys::HtmlInputElement;
 use yew::prelude::*;
 use yew::suspense::{use_future, SuspensionResult, UseFutureHandle};
 use yew_router::hooks::use_navigator;
-use serde::{Serialize};
-use crate::components::table::TableOptions;
-use crate::components::table::types::{ColumnBuilder, Table, TableData};
 
 #[hook]
 fn use_user_list() -> SuspensionResult<UseFutureHandle<Result<Vec<User>, Error>>> {
@@ -36,25 +36,30 @@ pub fn user_list() -> HtmlResult {
 
     let html_result = match *res {
         Ok(ref list) => {
-            let columns = vec![ColumnBuilder::new("id")
-                                   .orderable(true)
-                                   .short_name("#")
-                                   .data_property("id")
-                                   .header_class("user-select-none")
-                                   .build(),
-                               ColumnBuilder::new("username")
-                                   .orderable(true)
-                                   .short_name("Username")
-                                   .data_property("username")
-                                   .header_class("user-select-none")
-                                   .build(),
-                               ColumnBuilder::new("email")
-                                   .orderable(true)
-                                   .short_name("Email")
-                                   .data_property("email")
-                                   .header_class("user-select-none")
-                                   .build(),
-                               ColumnBuilder::new("Actions").header_class("user-select-none").build()];
+            let columns = vec![
+                ColumnBuilder::new("id")
+                    .orderable(true)
+                    .short_name("#")
+                    .data_property("id")
+                    .header_class("user-select-none")
+                    .build(),
+                ColumnBuilder::new("username")
+                    .orderable(true)
+                    .short_name("Username")
+                    .data_property("username")
+                    .header_class("user-select-none")
+                    .build(),
+                ColumnBuilder::new("email")
+                    .orderable(true)
+                    .short_name("Email")
+                    .data_property("email")
+                    .header_class("user-select-none")
+                    .build(),
+                ColumnBuilder::new("Actions")
+                    .data_property("actions")
+                    .header_class("user-select-none")
+                    .build(),
+            ];
 
             let mut data = Vec::new();
             for user in list.iter() {
@@ -154,7 +159,10 @@ impl TableData for UserLine {
     fn matches_search(&self, needle: Option<String>) -> bool {
         debug!("Searching: {:?}", needle);
         needle.map_or(true, |search| {
-            self.username.to_lowercase().contains(&search.to_lowercase()) || self.email.to_lowercase().contains(&search.to_lowercase())
+            self.username
+                .to_lowercase()
+                .contains(&search.to_lowercase())
+                || self.email.to_lowercase().contains(&search.to_lowercase())
         })
     }
 }

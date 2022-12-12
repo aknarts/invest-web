@@ -1,21 +1,21 @@
-use std::cmp::Ordering;
-use tracing::debug;
-use serde::{Serialize, Serializer};
-use web_sys::HtmlInputElement;
-use yew::prelude::*;
-use yew::suspense::{SuspensionResult, use_future, UseFutureHandle};
-use yew_hooks::UseCounterHandle;
-use yew_router::prelude::use_navigator;
-use crate::app::Route;
-use super::role_modal::ManageRole;
-use serde_value::Value;
 use super::delete_role_modal::DeleteRole;
+use super::role_modal::ManageRole;
+use crate::app::Route;
 use crate::components::modal::Modal;
-use crate::components::table::TableOptions;
 use crate::components::table::types::{ColumnBuilder, Table, TableData};
-use crate::services::admin::{get_role_list, Role};
+use crate::components::table::TableOptions;
 use crate::error::Error;
 use crate::hooks::use_user_context;
+use crate::services::admin::{get_role_list, Role};
+use serde::{Serialize, Serializer};
+use serde_value::Value;
+use std::cmp::Ordering;
+use tracing::debug;
+use web_sys::HtmlInputElement;
+use yew::prelude::*;
+use yew::suspense::{use_future, SuspensionResult, UseFutureHandle};
+use yew_hooks::UseCounterHandle;
+use yew_router::prelude::use_navigator;
 
 #[hook]
 fn use_roles_list() -> SuspensionResult<UseFutureHandle<Result<Vec<Role>, Error>>> {
@@ -57,22 +57,30 @@ pub fn role_list(props: &RoleListProp) -> HtmlResult {
 
     let html_result = match *res {
         Ok(ref list) => {
-            let columns = vec![ColumnBuilder::new("id")
-                                   .orderable(true)
-                                   .short_name("#")
-                                   .data_property("id")
-                                   .header_class("user-select-none")
-                                   .build(), ColumnBuilder::new("name")
-                                   .orderable(true)
-                                   .short_name("Name")
-                                   .data_property("name")
-                                   .header_class("user-select-none")
-                                   .build(),ColumnBuilder::new("description")
-                .orderable(true)
-                .short_name("Description")
-                .data_property("description")
-                .header_class("user-select-none")
-                .build(), ColumnBuilder::new("Actions").header_class("user-select-none").build()];
+            let columns = vec![
+                ColumnBuilder::new("id")
+                    .orderable(true)
+                    .short_name("#")
+                    .data_property("id")
+                    .header_class("user-select-none")
+                    .build(),
+                ColumnBuilder::new("name")
+                    .orderable(true)
+                    .short_name("Name")
+                    .data_property("name")
+                    .header_class("user-select-none")
+                    .build(),
+                ColumnBuilder::new("description")
+                    .orderable(true)
+                    .short_name("Description")
+                    .data_property("description")
+                    .header_class("user-select-none")
+                    .build(),
+                ColumnBuilder::new("Actions")
+                    .data_property("actions")
+                    .header_class("user-select-none")
+                    .build(),
+            ];
 
             let mut data = Vec::new();
             for role in list.iter() {
@@ -152,8 +160,8 @@ impl Eq for WrapCounter {}
 
 impl Serialize for WrapCounter {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-        where
-            S: Serializer,
+    where
+        S: Serializer,
     {
         serializer.serialize_i8(0)
     }
