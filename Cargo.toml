@@ -13,7 +13,7 @@ categories = ["gui", "wasm", "web-programming"]
 [dependencies]
 yew = { version = "0.20" }
 yew-router = { version = "0.17" }
-yew-hooks = { git = "https://github.com/jetli/yew-hooks.git" }
+yew-hooks = { version = "0.2.0" }
 wasm-logger = "0.2"
 tracing-wasm = "0.2"
 parking_lot = "0.12.1"
@@ -25,16 +25,15 @@ lazy_static = "1.4"
 serde = "1"
 serde-value = "0.7"
 reqwest = { version = "0.11.7", features = ["json"] }
-rust-crypto-wasm = "0.3.1"
-argon2 = "0.4.1"
 
 [dependencies.web-sys]
 version = "0.3"
 features = [
-    "Document",
-    "Element",
-    "Node",
-    "Window",
-    "HtmlCollection",
     "HtmlInputElement",
 ]
+
+[profile.release]
+lto = true
+panic = 'abort'
+codegen-units = 1
+opt-level = 'z'
