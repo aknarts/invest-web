@@ -112,8 +112,8 @@ pub struct TableState {
 /// The a table with columns holding data.
 #[derive(Clone, Eq, PartialEq, Default)]
 pub struct Table<T>
-    where
-        T: TableData,
+where
+    T: TableData,
 {
     /// The order of the columns determines the order in which they are displayed.
     pub columns: Vec<Column>,

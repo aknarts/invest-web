@@ -12,7 +12,7 @@ pub struct TableOptions {
     pub unordered_class: Option<String>,
     pub ascending_class: Option<String>,
     pub descending_class: Option<String>,
-    pub orderable_classes: Vec<String>
+    pub orderable_classes: Vec<String>,
 }
 
 /// Properties of the Table component.
@@ -120,13 +120,15 @@ where
         let get_header_sorting_class = |index: usize| {
             use TableOrder::{Ascending, Descending, Unordered};
 
-            self.state.order.get(index).map_or(None, |order| match order {
-                Unordered => ctx.props().options.unordered_class.clone(),
-                Ascending => ctx.props().options.ascending_class.clone(),
-                Descending => ctx.props().options.descending_class.clone(),
-            })
+            self.state
+                .order
+                .get(index)
+                .map_or(None, |order| match order {
+                    Unordered => ctx.props().options.unordered_class.clone(),
+                    Ascending => ctx.props().options.ascending_class.clone(),
+                    Descending => ctx.props().options.descending_class.clone(),
+                })
         };
-
 
         let th_view = |child| {
             if self.orderable && column.orderable {

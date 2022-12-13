@@ -1,10 +1,10 @@
+use crate::app::Route;
+use crate::error::Error;
+use crate::services::admin::{get_permissions_list, Permission, RoleInfo};
 use tracing::debug;
 use yew::prelude::*;
 use yew::suspense::{use_future, SuspensionResult, UseFutureHandle};
 use yew_router::prelude::use_navigator;
-use crate::app::Route;
-use crate::services::admin::{get_permissions_list, Permission, RoleInfo};
-use crate::error::Error;
 
 #[hook]
 fn use_permissions_list() -> SuspensionResult<UseFutureHandle<Result<Vec<Permission>, Error>>> {

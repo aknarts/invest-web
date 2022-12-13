@@ -1,7 +1,7 @@
-mod permission;
-mod role_modal;
 mod delete_role_modal;
+mod permission;
 mod role_list;
+mod role_modal;
 
 use role_list::RoleList;
 use tracing::debug;

@@ -1,6 +1,6 @@
+use crate::services::admin::{Role, RoleId};
 use yew::prelude::*;
 use yew_hooks::{use_async, UseCounterHandle};
-use crate::services::admin::{Role, RoleId};
 
 #[derive(Properties, PartialEq)]
 pub struct DeleteRoleProps {
