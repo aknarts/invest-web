@@ -35,8 +35,7 @@ pub fn role_list(props: &Props) -> HtmlResult {
     let active = use_state(|| false);
     let search_term = use_state(|| None::<String>);
     let search = (*search_term).as_ref().cloned();
-    let act = *active;
-    debug!("search: {:?}", search);
+    let act = active.clone();
 
     let oninput_search = {
         Callback::from(move |e: InputEvent| {
@@ -224,9 +223,12 @@ impl TableData for RoleLine {
     }
 
     fn matches_search(&self, needle: Option<String>) -> bool {
-        debug!("Searching: {:?}", needle);
         needle.map_or(true, |search| {
             self.name.to_lowercase().contains(&search.to_lowercase())
+                || self
+                    .description
+                    .to_lowercase()
+                    .contains(&search.to_lowercase())
         })
     }
 }
@@ -240,20 +242,18 @@ pub struct ActionLineProp {
 #[function_component(ActionLine)]
 fn role_line(props: &ActionLineProp) -> Html {
     let edit = use_state(|| false);
-    let ed = *edit;
+    let ed = edit.clone();
     let delete = use_state(|| false);
-    let del = *delete;
+    let del = delete.clone();
 
     let onclick = {
         Callback::from(move |_| {
-            debug!("Clicked");
             edit.set(!*edit);
         })
     };
 
     let onclick_delete = {
         Callback::from(move |_| {
-            debug!("Clicked");
             delete.set(!*delete);
         })
     };

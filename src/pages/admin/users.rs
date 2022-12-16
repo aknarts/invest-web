@@ -157,7 +157,6 @@ impl TableData for UserLine {
     }
 
     fn matches_search(&self, needle: Option<String>) -> bool {
-        debug!("Searching: {:?}", needle);
         needle.map_or(true, |search| {
             self.username
                 .to_lowercase()
