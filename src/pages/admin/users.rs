@@ -1,4 +1,5 @@
 use crate::app::Route;
+use crate::components::modal::Modal;
 use crate::components::table::types::{ColumnBuilder, Table, TableData};
 use crate::components::table::Options;
 use crate::error::Error;
@@ -172,10 +173,23 @@ pub struct ActionLineProp {
 }
 
 #[function_component(ActionLine)]
-fn role_line(_props: &ActionLineProp) -> Html {
+fn action_line(props: &ActionLineProp) -> Html {
+    let details = use_state(|| false);
+    let det = details.clone();
+
+    let user = props.user.clone();
+
+    let onclick = {
+        Callback::from(move |_| {
+            details.set(!*details);
+        })
+    };
+
     html!(
         <>
-            <button type="button" class="btn btn-primary mx-1">{ "Details" }</button>
+            <Modal close={&onclick} active={det} title={format!("User <mark>{}</mark> details", user.username)} >
+            </Modal>
+            <button onclick={&onclick} type="button" class="btn btn-primary mx-1">{ "Details" }</button>
         </>
     )
 }

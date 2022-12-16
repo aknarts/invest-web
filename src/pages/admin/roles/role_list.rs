@@ -240,7 +240,7 @@ pub struct ActionLineProp {
 }
 
 #[function_component(ActionLine)]
-fn role_line(props: &ActionLineProp) -> Html {
+fn action_line(props: &ActionLineProp) -> Html {
     let edit = use_state(|| false);
     let ed = edit.clone();
     let delete = use_state(|| false);

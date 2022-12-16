@@ -5,6 +5,7 @@ pub struct Prop {
     pub close: Callback<MouseEvent>,
     pub active: UseStateHandle<bool>,
     pub title: String,
+    #[prop_or_default]
     pub children: Children,
 }
 
@@ -17,13 +18,17 @@ pub fn modal(props: &Prop) -> Html {
     } else {
         (None, "display: none;")
     };
+    let title = Html::from_html_unchecked(AttrValue::from(format!(
+        "<h1 class=\"modal-title fs-5\" id=\"exampleModalLabel\">{}</h1>",
+        props.title.clone()
+    )));
 
     html!(
         <div ref={node} class={classes!("modal", "fade", active_class.0)} style={active_class.1}>
             <div class="modal-dialog modal-dialog-scrollable">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h1 class="modal-title fs-5" id="exampleModalLabel">{props.title.clone()}</h1>
+                        {title}
                         <button type="button" class="btn-close" onclick={&props.close}></button>
                     </div>
                     { for props.children.iter() }
