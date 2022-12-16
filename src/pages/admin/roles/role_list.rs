@@ -3,7 +3,7 @@ use super::role_modal::ManageRole;
 use crate::app::Route;
 use crate::components::modal::Modal;
 use crate::components::table::types::{ColumnBuilder, Table, TableData};
-use crate::components::table::TableOptions;
+use crate::components::table::Options;
 use crate::error::Error;
 use crate::hooks::use_user_context;
 use crate::services::admin::{get_role_list, Role};
@@ -23,12 +23,12 @@ fn use_roles_list() -> SuspensionResult<UseFutureHandle<Result<Vec<Role>, Error>
 }
 
 #[derive(Properties, PartialEq)]
-pub struct RoleListProp {
+pub struct Props {
     pub counter: UseCounterHandle,
 }
 
 #[function_component(RoleList)]
-pub fn role_list(props: &RoleListProp) -> HtmlResult {
+pub fn role_list(props: &Props) -> HtmlResult {
     let res = use_roles_list()?;
     let user_ctx = use_user_context();
     let history = use_navigator().unwrap();
@@ -96,7 +96,7 @@ pub fn role_list(props: &RoleListProp) -> HtmlResult {
                 });
             }
 
-            let options = TableOptions {
+            let options = Options {
                 unordered_class: Some("fa-sort".to_string()),
                 ascending_class: Some("fa-sort-up".to_string()),
                 descending_class: Some("fa-sort-down".to_string()),

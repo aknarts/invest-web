@@ -1,6 +1,6 @@
 use crate::app::Route;
 use crate::components::table::types::{ColumnBuilder, Table, TableData};
-use crate::components::table::TableOptions;
+use crate::components::table::Options;
 use crate::error::Error;
 use crate::services::admin::{get_user_list, User};
 use serde::Serialize;
@@ -71,7 +71,7 @@ pub fn user_list() -> HtmlResult {
                 });
             }
 
-            let options = TableOptions {
+            let options = Options {
                 unordered_class: Some("fa-sort".to_string()),
                 ascending_class: Some("fa-sort-up".to_string()),
                 descending_class: Some("fa-sort-down".to_string()),

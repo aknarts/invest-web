@@ -87,7 +87,7 @@ fn permission_checkbox(
 }
 
 #[derive(Properties, PartialEq)]
-pub struct PermissionProp {
+pub struct Props {
     pub selected_callback: Callback<InputEvent>,
     pub checked: bool,
     pub name: String,
@@ -95,7 +95,7 @@ pub struct PermissionProp {
 }
 
 #[function_component(PermissionLine)]
-pub fn permission_line(props: &PermissionProp) -> Html {
+pub fn permission_line(props: &Props) -> Html {
     html!(
         <div class="form-check form-switch">
             <input

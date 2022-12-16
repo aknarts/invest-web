@@ -12,14 +12,14 @@ impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let msg = match self {
             Self::InvalidFieldName(field_name) => {
-                format!("Invalid field name given: '{}'.", field_name)
+                format!("Invalid field name given: '{field_name}'.")
             }
             Self::NonRenderableField(field_name) => format!(
                 "Could not render field '{}' for which no HTML representation is defined.",
                 field_name
             ),
         };
-        write!(f, "{}", msg)
+        write!(f, "{msg}")
     }
 }
 

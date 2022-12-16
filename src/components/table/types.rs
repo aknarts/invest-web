@@ -39,8 +39,8 @@ pub struct ColumnBuilder {
 }
 
 impl ColumnBuilder {
-    pub fn new(name: &str) -> ColumnBuilder {
-        ColumnBuilder {
+    pub fn new(name: &str) -> Self {
+        Self {
             name: name.to_string(),
             short_name: None,
             data_property: None,
@@ -49,6 +49,7 @@ impl ColumnBuilder {
         }
     }
 
+    #[allow(clippy::missing_const_for_fn)]
     pub fn build(self) -> Column {
         Column {
             name: self.name,
@@ -59,22 +60,22 @@ impl ColumnBuilder {
         }
     }
 
-    pub fn orderable(mut self, orderable: bool) -> ColumnBuilder {
+    pub const fn orderable(mut self, orderable: bool) -> Self {
         self.orderable = orderable;
         self
     }
 
-    pub fn data_property(mut self, data_property: &str) -> ColumnBuilder {
+    pub fn data_property(mut self, data_property: &str) -> Self {
         self.data_property = Some(data_property.to_string());
         self
     }
 
-    pub fn short_name(mut self, short_name: &str) -> ColumnBuilder {
+    pub fn short_name(mut self, short_name: &str) -> Self {
         self.short_name = Some(short_name.to_string());
         self
     }
 
-    pub fn header_class(mut self, class: &str) -> ColumnBuilder {
+    pub fn header_class(mut self, class: &str) -> Self {
         self.header_classes.push(class.to_string());
         self
     }

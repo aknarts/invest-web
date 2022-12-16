@@ -47,7 +47,7 @@ where
         || method == reqwest::Method::PUT
         || method == reqwest::Method::PATCH
         || method == reqwest::Method::DELETE;
-    let url = format!("{}{}", API_ROOT, url);
+    let url = format!("{API_ROOT}{url}");
     let mut builder = reqwest::Client::new().request(method, &url);
     if let Some(token) = get_token() {
         builder = builder.bearer_auth(token);

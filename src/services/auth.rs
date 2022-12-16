@@ -27,7 +27,7 @@ pub async fn logout() -> Result<ApiResult, Error> {
 
 /// Get current user info
 pub async fn confirm_email(code: &str) -> Result<ApiResult, Error> {
-    request_get::<ApiResult>(format!("/users/email?code={}", code)).await
+    request_get::<ApiResult>(format!("/users/email?code={code}")).await
 }
 
 /// Get current user info

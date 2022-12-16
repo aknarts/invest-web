@@ -8,7 +8,7 @@ use yew::html;
 use yew::prelude::*;
 
 #[derive(Clone, Eq, PartialEq, Default)]
-pub struct TableOptions {
+pub struct Options {
     pub unordered_class: Option<String>,
     pub ascending_class: Option<String>,
     pub descending_class: Option<String>,
@@ -30,7 +30,7 @@ where
     #[prop_or_default]
     pub search: Option<String>,
     #[prop_or_default]
-    pub options: TableOptions,
+    pub options: Options,
 }
 
 #[derive(Debug)]
@@ -120,14 +120,11 @@ where
         let get_header_sorting_class = |index: usize| {
             use TableOrder::{Ascending, Descending, Unordered};
 
-            self.state
-                .order
-                .get(index)
-                .map_or(None, |order| match order {
-                    Unordered => ctx.props().options.unordered_class.clone(),
-                    Ascending => ctx.props().options.ascending_class.clone(),
-                    Descending => ctx.props().options.descending_class.clone(),
-                })
+            self.state.order.get(index).and_then(|order| match order {
+                Unordered => ctx.props().options.unordered_class.clone(),
+                Ascending => ctx.props().options.ascending_class.clone(),
+                Descending => ctx.props().options.descending_class.clone(),
+            })
         };
 
         let th_view = |child| {
