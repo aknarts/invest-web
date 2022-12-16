@@ -4,7 +4,7 @@ use crate::hooks::use_user_context;
 use crate::types::auth::ApiResult;
 use std::collections::HashMap;
 use yew::prelude::*;
-use yew_hooks::{use_async, UseAsyncHandle};
+use yew_hooks::{use_async, use_click_away, UseAsyncHandle};
 use yew_router::prelude::*;
 
 #[function_component(Header)]
@@ -38,7 +38,7 @@ pub fn header() -> Html {
         })
     };
 
-    html! (
+    html!(
         <>
             <nav class="navbar navbar-expand-lg sticky-top shadow bg-light" role="navigation" aria-label="main navigation">
                 <div class="container-fluid">
@@ -72,7 +72,7 @@ pub fn header() -> Html {
 }
 
 fn logged_out_view(route: &Option<Route>) -> Html {
-    html! (
+    html!(
         <>
             <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                 <li class="nav-item">
@@ -116,16 +116,7 @@ fn logged_in_view(
         })
     };
 
-    let show = if *dropdown { Some("show") } else { None };
-    let dropped = *dropdown;
-
-    let drop = {
-        Callback::from(move |_| {
-            dropdown.set(!*dropdown);
-        })
-    };
-
-    html! (
+    html!(
         <>
             <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                 <li class="nav-item">
@@ -157,34 +148,71 @@ fn logged_in_view(
                     </li>
                 }
                 <li class="nav-item dropdown">
-                    <span class={classes!("nav-link", "dropdown-toggle", show)} role="button" onclick={drop} aria-expanded={
-                            if dropped {
-                                {"true"}
-                            } else {
-                                {"false"}
-                            }
-                        }>
-                        { &user_info.username }
-                    </span>
-                    <ul class={classes!("dropdown-menu", "dropdown-menu-end", show)} style="position: absolute; inset: 0px 0px auto auto; margin: 0px; transform: translate(0px, 40px);">
-                        <li>
-                            <span class="dropdown-item-text">{ &user_info.username }</span>
-                        </li>
-                        <li>
-                            <span class="dropdown-item-text text-muted">{ &user_info.email }</span>
-                        </li>
-                        <li><hr class="dropdown-divider" /></li>
-                        <li>
-                            <Link<Route> classes={classes!("dropdown-item")} to={Route::Profile}>
-                            { "Profile" }
-                            </Link<Route>>
-                        </li>
-                    </ul>
+                    <UserDropdown dropdown={dropdown} user_info={user_info.clone()} />
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" {onclick}>
                         <i class="fa-solid fa-right-from-bracket"></i>
                     </a>
+                </li>
+            </ul>
+        </>
+    )
+}
+
+#[derive(Properties, PartialEq)]
+struct UserDropdownProps {
+    dropdown: UseStateHandle<bool>,
+    user_info: crate::hooks::Handle,
+}
+
+#[function_component(UserDropdown)]
+fn user_dropdown(props: &UserDropdownProps) -> Html {
+    let user_info = props.user_info.clone();
+    let dropdown = props.dropdown.clone();
+    let show = if *dropdown { Some("show") } else { None };
+    let dropped = *dropdown;
+
+    let drop = {
+        let dropdown = dropdown.clone();
+        Callback::from(move |_| {
+            dropdown.set(!*dropdown);
+        })
+    };
+
+    let node = use_node_ref();
+
+    {
+        let dropped = dropped.clone();
+        use_click_away(node.clone(), move |_: Event| {
+            if dropped {
+                dropdown.set(false);
+            }
+        });
+    }
+    html!(
+        <>
+            <span class={classes!("nav-link", "dropdown-toggle", show)} role="button" onclick={drop} aria-expanded={
+                    if dropped {
+                        {"true"}
+                    } else {
+                        {"false"}
+                    }
+                }>
+                { &user_info.username }
+            </span>
+            <ul ref={node} class={classes!("dropdown-menu", "dropdown-menu-end", show)} style="position: absolute; inset: 0px 0px auto auto; margin: 0px; transform: translate(0px, 40px);">
+                <li>
+                    <span class="dropdown-item-text">{ &user_info.username }</span>
+                </li>
+                <li>
+                    <span class="dropdown-item-text text-muted">{ &user_info.email }</span>
+                </li>
+                <li><hr class="dropdown-divider" /></li>
+                <li>
+                    <Link<Route> classes={classes!("dropdown-item")} to={Route::Profile}>
+                    { "Profile" }
+                    </Link<Route>>
                 </li>
             </ul>
         </>
