@@ -69,14 +69,16 @@ pub fn confirm() -> Html {
             if let Some(r) = &do_confirm.data {
                 debug!("validation result: {:?}", r);
                 if r.result.eq("ok") {
-                    user_ctx.validate_email(true);
+                    if let Some(email) = &r.email {
+                        user_ctx.validate_email(email, true);
+                    }
+
                     confirmation.set(Status::Confirmed);
                     let timeout = Timeout::new(10000, move || {
                         history.push(&Route::Home);
                     });
                     timeout.forget();
                 } else {
-                    user_ctx.validate_email(false);
                     confirmation.set(Status::Rejected);
                 }
             }

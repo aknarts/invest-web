@@ -23,9 +23,17 @@ pub fn header() -> Html {
     };
     let activated = *active;
 
+    let emails = user_ctx.non_validated_emails();
+
+    let email = emails.first().cloned();
+
+    let e = email.clone().unwrap_or_default();
+
     let onclick = { Callback::from(move |_| active.set(!*active)) };
 
-    let resend_email = use_async(crate::services::auth::resend());
+    let user_id = user_ctx.id;
+
+    let resend_email = use_async(crate::services::auth::resend(user_id, e));
 
     let show_resend_notification = *resent;
 
@@ -59,9 +67,9 @@ pub fn header() -> Html {
                     </div>
                 </div>
             </nav>
-            if !user_ctx.email_valid && user_ctx.is_authenticated() && show_resend_notification {
+            if email.is_some() && user_ctx.is_authenticated() && show_resend_notification {
                 <div class="alert alert-warning">
-                    { "Email not verified please verify it. " }
+                    { format!("Email {} not verified please verify it.", email.unwrap()) }
                     <a onclick={resend}>
                         { "Resend verification email." }
                     </a>
@@ -183,7 +191,7 @@ fn user_dropdown(props: &UserDropdownProps) -> Html {
     let node = use_node_ref();
 
     {
-        let dropped = dropped.clone();
+        let dropped = dropped;
         use_click_away(node.clone(), move |_: Event| {
             if dropped {
                 dropdown.set(false);
@@ -206,7 +214,7 @@ fn user_dropdown(props: &UserDropdownProps) -> Html {
                     <span class="dropdown-item-text">{ &user_info.username }</span>
                 </li>
                 <li>
-                    <span class="dropdown-item-text text-muted">{ &user_info.email }</span>
+                    <span class="dropdown-item-text text-muted">{ &user_info.primary_email().unwrap_or_default() }</span>
                 </li>
                 <li><hr class="dropdown-divider" /></li>
                 <li>

@@ -1,6 +1,6 @@
 use crate::error::Error;
 use crate::services::requests::{request_delete, request_get, request_post, request_put};
-use crate::types::auth::ApiResult;
+use crate::types::auth::{ApiResult, EmailDetail};
 use serde::{Deserialize, Serialize};
 use std::cmp::Ordering;
 use std::collections::HashSet;
@@ -11,6 +11,14 @@ pub struct User {
     pub id: i64,
     pub email: String,
     pub username: String,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, PartialOrd, Ord, Default)]
+pub struct UserDetail {
+    pub id: i64,
+    pub emails: Vec<EmailDetail>,
+    pub username: String,
+    pub roles: Vec<String>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, Default)]
@@ -67,6 +75,10 @@ impl PartialOrd for Permission {
 
 pub async fn get_user_list() -> Result<Vec<User>, Error> {
     request_get::<Vec<User>>("/admin/users".to_string()).await
+}
+
+pub async fn get_user_detail(id: i64) -> Result<UserDetail, Error> {
+    request_get::<UserDetail>(format!("/admin/users?id={id}")).await
 }
 
 pub async fn get_role_list() -> Result<Vec<Role>, Error> {

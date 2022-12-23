@@ -1,15 +1,19 @@
 use crate::app::Route;
 use crate::components::modal::Modal;
-use crate::components::table::types::{ColumnBuilder, Table, TableData};
+use crate::components::table::types::Table;
+use crate::components::table::types::{ColumnBuilder, TableData};
 use crate::components::table::Options;
 use crate::error::Error;
+use crate::pages::admin::users::modal::UserDetails;
 use crate::services::admin::{get_user_list, User};
+use crate::types::WrapCounter;
 use serde::Serialize;
 use serde_value::Value;
 use tracing::debug;
 use web_sys::HtmlInputElement;
 use yew::prelude::*;
 use yew::suspense::{use_future, SuspensionResult, UseFutureHandle};
+use yew_hooks::UseCounterHandle;
 use yew_router::hooks::use_navigator;
 
 #[hook]
@@ -17,8 +21,13 @@ fn use_user_list() -> SuspensionResult<UseFutureHandle<Result<Vec<User>, Error>>
     use_future(|| async move { get_user_list().await })
 }
 
+#[derive(Properties, PartialEq)]
+pub struct Props {
+    pub counter: UseCounterHandle,
+}
+
 #[function_component(UserList)]
-pub fn user_list() -> HtmlResult {
+pub fn user_list(props: &Props) -> HtmlResult {
     let res = use_user_list()?;
     let history = use_navigator().unwrap();
     let search_term = use_state(|| None::<String>);
@@ -69,6 +78,7 @@ pub fn user_list() -> HtmlResult {
                     username: user.username.clone(),
                     email: user.email.clone(),
                     user: user.clone(),
+                    counter: WrapCounter(Some(props.counter.clone())),
                 });
             }
 
@@ -122,6 +132,8 @@ struct UserLine {
     pub email: String,
     #[serde(skip_serializing)]
     pub user: User,
+    #[serde(skip_serializing)]
+    pub counter: WrapCounter,
 }
 
 impl TableData for UserLine {
@@ -133,7 +145,7 @@ impl TableData for UserLine {
             "actions" => {
                 html!(
                     <>
-                        <ActionLine user={self.user.clone()}/>
+                        <ActionLine user={self.user.clone()} counter={self.counter.0.clone().unwrap()}/>
                     </>
                 )
             }
@@ -167,9 +179,10 @@ impl TableData for UserLine {
     }
 }
 
-#[derive(Properties, Eq, PartialEq)]
+#[derive(Properties, PartialEq)]
 pub struct ActionLineProp {
     pub user: User,
+    pub counter: UseCounterHandle,
 }
 
 #[function_component(ActionLine)]
@@ -188,27 +201,9 @@ fn action_line(props: &ActionLineProp) -> Html {
     html!(
         <>
             <Modal close={&onclick} active={det} title={format!("User <mark>{}</mark> details", user.username)} >
+                <UserDetails user_id={user.id} close={&onclick} counter={props.counter.clone()}/>
             </Modal>
             <button onclick={&onclick} type="button" class="btn btn-primary mx-1">{ "Details" }</button>
         </>
-    )
-}
-
-#[function_component(Users)]
-pub fn users() -> Html {
-    let fallback = html!(
-        <div class="d-flex justify-content-center">
-            <span class="spinner-border text-secondary" role="status">
-              <span class="sr-only">{"Loading..."}</span>
-            </span>
-        </div>
-    );
-
-    html!(
-        <section class="grid flex-fill border-end border-start border-bottom">
-            <Suspense {fallback}>
-                <UserList />
-            </Suspense>
-        </section>
     )
 }

@@ -1,7 +1,10 @@
 use super::requests::{request_get, request_post, request_put};
 use crate::error::Error;
 use crate::services::requests::{request_patch, set_token};
-use crate::types::auth::{ApiResult, LoginInfo, RegisterInfo, RegisterResponse, UserInfo};
+use crate::types::auth::{
+    ApiResult, EmailConfirmationResult, EmailResendInfo, LoginInfo, RegisterInfo, RegisterResponse,
+    UserInfo,
+};
 
 /// Get current user info
 pub async fn current() -> Result<UserInfo, Error> {
@@ -26,11 +29,15 @@ pub async fn logout() -> Result<ApiResult, Error> {
 }
 
 /// Get current user info
-pub async fn confirm_email(code: &str) -> Result<ApiResult, Error> {
-    request_get::<ApiResult>(format!("/users/email?code={code}")).await
+pub async fn confirm_email(code: &str) -> Result<EmailConfirmationResult, Error> {
+    request_get::<EmailConfirmationResult>(format!("/users/email?code={code}")).await
 }
 
 /// Get current user info
-pub async fn resend() -> Result<ApiResult, Error> {
-    request_patch::<(), ApiResult>("/users/email".to_string(), ()).await
+pub async fn resend(user_id: i64, email: String) -> Result<ApiResult, Error> {
+    request_patch::<EmailResendInfo, ApiResult>(
+        "/users/email".to_string(),
+        EmailResendInfo { user_id, email },
+    )
+    .await
 }

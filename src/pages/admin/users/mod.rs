@@ -1,14 +1,12 @@
-mod delete_role_modal;
-pub mod list;
+mod list;
 mod modal;
-mod permission;
 
-use list::RoleList;
+use crate::pages::admin::users::list::UserList;
 use yew::prelude::*;
 use yew_hooks::use_counter;
 
-#[function_component(Roles)]
-pub fn roles() -> Html {
+#[function_component(Users)]
+pub fn users() -> Html {
     let counter = use_counter(0);
     let count = *counter;
 
@@ -23,7 +21,7 @@ pub fn roles() -> Html {
     html!(
         <section class="grid flex-fill border-end border-start border-bottom">
             <Suspense {fallback}>
-                <RoleList counter={counter} key={count}/>
+                <UserList counter={counter} key={count}/>
             </Suspense>
         </section>
     )

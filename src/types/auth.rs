@@ -20,9 +20,21 @@ pub struct RegisterInfo {
     pub email: String,
 }
 
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
+pub struct EmailResendInfo {
+    pub user_id: i64,
+    pub email: String,
+}
+
 #[derive(Serialize, Deserialize, Clone, Debug, Default, Eq, PartialEq)]
 pub struct ApiResult {
     pub result: String,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, Default, Eq, PartialEq)]
+pub struct EmailConfirmationResult {
+    pub result: String,
+    pub email: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, Default)]
@@ -37,18 +49,55 @@ pub struct RegisterInfoWrapper {
     pub user: RegisterInfo,
 }
 
+#[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, PartialOrd, Ord, Default)]
+pub struct EmailDetail {
+    pub email: String,
+    pub verified: bool,
+    pub primary: bool,
+}
+
 #[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, Default)]
 pub struct UserInfo {
-    pub email: String,
+    pub id: i64,
     pub token: String,
     pub username: String,
-    pub email_valid: bool,
+    pub emails: Vec<EmailDetail>,
     pub permissions: Vec<String>,
 }
 
 impl UserInfo {
     pub fn is_authenticated(&self) -> bool {
         !self.token.is_empty()
+    }
+
+    pub fn primary_email(&self) -> Option<String> {
+        self.emails
+            .iter()
+            .filter_map(|e| {
+                if e.primary {
+                    Some(e.email.clone())
+                } else {
+                    None
+                }
+            })
+            .collect::<Vec<String>>()
+            .first()
+            .cloned()
+    }
+
+    pub fn non_validated_emails(&self) -> Vec<String> {
+        let mut emails = self.emails.clone();
+        emails.sort_by(|a, b| a.primary.cmp(&b.primary));
+        emails
+            .iter()
+            .filter_map(|e| {
+                if e.verified {
+                    None
+                } else {
+                    Some(e.email.clone())
+                }
+            })
+            .collect()
     }
 }
 

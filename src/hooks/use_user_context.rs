@@ -71,9 +71,13 @@ impl Handle {
         self.history.push(&Route::Home);
     }
 
-    pub fn validate_email(&self, valid: bool) {
+    pub fn validate_email(&self, email: &str, valid: bool) {
         let mut ctx = (*self.inner).clone();
-        ctx.email_valid = valid;
+        for x in &mut ctx.emails {
+            if x.email.to_lowercase().eq(&email.to_lowercase()) {
+                x.verified = valid;
+            }
+        }
         self.inner.set(ctx);
     }
 }

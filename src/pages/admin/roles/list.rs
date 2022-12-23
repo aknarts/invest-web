@@ -1,5 +1,5 @@
 use super::delete_role_modal::DeleteRole;
-use super::role_modal::ManageRole;
+use super::modal::ManageRole;
 use crate::app::Route;
 use crate::components::modal::Modal;
 use crate::components::table::types::{ColumnBuilder, Table, TableData};
@@ -7,9 +7,9 @@ use crate::components::table::Options;
 use crate::error::Error;
 use crate::hooks::use_user_context;
 use crate::services::admin::{get_role_list, Role};
-use serde::{Serialize, Serializer};
+use crate::types::WrapCounter;
+use serde::Serialize;
 use serde_value::Value;
-use std::cmp::Ordering;
 use tracing::debug;
 use web_sys::HtmlInputElement;
 use yew::prelude::*;
@@ -146,26 +146,6 @@ pub fn role_list(props: &Props) -> HtmlResult {
     Ok(html_result)
 }
 
-#[derive(Default, Clone)]
-struct WrapCounter(Option<UseCounterHandle>);
-
-impl PartialEq<Self> for WrapCounter {
-    fn eq(&self, _: &Self) -> bool {
-        true
-    }
-}
-
-impl Eq for WrapCounter {}
-
-impl Serialize for WrapCounter {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        serializer.serialize_i8(0)
-    }
-}
-
 #[derive(Default, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize)]
 struct RoleLine {
     pub id: i32,
@@ -175,18 +155,6 @@ struct RoleLine {
     pub role: Role,
     #[serde(skip_serializing)]
     pub counter: WrapCounter,
-}
-
-impl Ord for WrapCounter {
-    fn cmp(&self, _: &Self) -> Ordering {
-        Ordering::Equal
-    }
-}
-
-impl PartialOrd for WrapCounter {
-    fn partial_cmp(&self, _: &Self) -> Option<Ordering> {
-        Some(Ordering::Equal)
-    }
 }
 
 impl TableData for RoleLine {
