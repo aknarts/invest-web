@@ -101,3 +101,7 @@ pub async fn delete_role(role: RoleId) -> Result<ApiResult, Error> {
     debug!("Data sent: {:?}", role);
     request_delete::<RoleId, ApiResult>("/admin/roles".to_string(), role).await
 }
+
+pub async fn get_investments_list() -> Result<Vec<Role>, Error> {
+    request_get::<Vec<Role>>("/admin/roles".to_string()).await
+}
