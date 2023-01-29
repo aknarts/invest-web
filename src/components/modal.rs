@@ -1,5 +1,16 @@
 use yew::prelude::*;
 
+#[derive(Default, PartialEq)]
+#[allow(dead_code)]
+pub enum Size {
+    Small,
+    #[default]
+    Medium,
+    Large,
+    XLarge,
+    Fullscreen,
+}
+
 #[derive(Properties, PartialEq)]
 pub struct Prop {
     pub close: Callback<MouseEvent>,
@@ -7,6 +18,14 @@ pub struct Prop {
     pub title: String,
     #[prop_or_default]
     pub children: Children,
+    #[prop_or_default]
+    pub size: Size,
+    #[prop_or(true)]
+    pub backdrop: bool,
+    #[prop_or(true)]
+    pub centered: bool,
+    #[prop_or(true)]
+    pub scrollable: bool,
 }
 
 #[function_component(Modal)]
@@ -23,17 +42,40 @@ pub fn modal(props: &Prop) -> Html {
         props.title.clone()
     )));
 
+    let size = match props.size {
+        Size::Small => Some("modal-sm"),
+        Size::Medium => None,
+        Size::Large => Some("modal-lg"),
+        Size::XLarge => Some("modal-xl"),
+        Size::Fullscreen => Some("modal-fullscreen"),
+    };
+
+    let centered = match props.centered {
+        true => Some("modal-dialog-centered"),
+        false => None,
+    };
+
+    let scrollable = match props.scrollable {
+        true => Some("modal-dialog-scrollable"),
+        false => None,
+    };
+
     html!(
-        <div ref={node} class={classes!("modal", "fade", active_class.0)} style={active_class.1}>
-            <div class="modal-dialog modal-dialog-scrollable">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        {title}
-                        <button type="button" class="btn-close" onclick={&props.close}></button>
+        <>
+            <div ref={node} class={classes!("modal", "fade", active_class.0)} style={active_class.1}>
+                <div class={classes!("modal-dialog", scrollable, size, centered)}>
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            {title}
+                            <button type="button" class="btn-close" onclick={&props.close}></button>
+                        </div>
+                        { for props.children.iter() }
                     </div>
-                    { for props.children.iter() }
                 </div>
             </div>
-        </div>
+            if active && props.backdrop {
+                <div class="modal-backdrop fade show"></div>
+            }
+        </>
     )
 }
