@@ -166,7 +166,7 @@ pub fn manage_role(props: &ManageRoleProps) -> Html {
     };
 
     html!(
-        <form {onsubmit}>
+        <>
             <div class="modal-body">
                 <fieldset>
                     <div class="input-group mb-2">
@@ -216,8 +216,10 @@ pub fn manage_role(props: &ManageRoleProps) -> Html {
                 </fieldset>
             </div>
             <div class="modal-footer">
-                <button type="submit" class="btn btn-primary">{ if props.role.is_some() {"Edit"} else {"Create"} }</button>
+                <form {onsubmit}>
+                    <button type="submit" class="btn btn-primary">{ if props.role.is_some() {"Edit"} else {"Create"} }</button>
+                </form>
             </div>
-        </form>
+        </>
     )
 }

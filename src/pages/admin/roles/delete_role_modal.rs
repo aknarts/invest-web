@@ -50,14 +50,16 @@ pub fn delete_role(props: &DeleteRoleProps) -> Html {
     };
 
     html!(
-        <form {onsubmit}>
+        <>
             <div class="modal-body">
                 { format!("Do you really want to remove role \"{}\"", role.name) }
             </div>
             <div class="modal-footer">
-              <button type="button" onclick={&props.close} class="btn btn-secondary">{"Cancel"}</button>
-              <button type="submit" class="btn btn-danger">{"Confirm"}</button>
+                <form {onsubmit} class="btn-group">
+                    <button type="button" onclick={&props.close} class="btn btn-secondary">{"Cancel"}</button>
+                    <button type="submit" class="btn btn-danger">{"Confirm"}</button>
+                </form>
             </div>
-        </form>
+        </>
     )
 }
