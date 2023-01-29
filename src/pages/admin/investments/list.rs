@@ -29,7 +29,6 @@ pub fn investments_list(props: &Props) -> HtmlResult {
     let history = use_navigator().unwrap();
     let active = use_state(|| false);
     let search_term = use_state(|| None::<String>);
-    let search = (*search_term).as_ref().cloned();
     let act = active.clone();
 
     let oninput_search = {
@@ -50,7 +49,7 @@ pub fn investments_list(props: &Props) -> HtmlResult {
     };
 
     let html_result = match *res {
-        Ok(ref list) => {
+        Ok(ref _list) => {
             html!(
                 <div>
                     <div class="d-flex">
@@ -70,7 +69,7 @@ pub fn investments_list(props: &Props) -> HtmlResult {
                         <div class="flex-shrink-0 p-2">
                             <button type="button" onclick={&onclick} class="btn btn-success">{ "Add Investment" }</button>
                         </div>
-                        <Modal close={&onclick} active={act} title="Add new investment" >
+                        <Modal close={&onclick} active={act} size={crate::components::modal::Size::Large} title="Add new investment" >
                             <ManageInvestment close={&onclick} counter={props.counter.clone()}/>
                         </Modal>
                     }
