@@ -130,3 +130,58 @@ pub struct SaltResponse {
 pub struct UserUpdateInfoWrapper {
     pub user: UserUpdateInfo,
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::types::auth::{EmailDetail, UserInfo};
+
+    #[test]
+    fn authenticated() {
+        let user = UserInfo::default();
+        assert_eq!(user.is_authenticated(), false)
+    }
+
+    #[test]
+    fn primary_email_none() {
+        let user = UserInfo::default();
+        assert_eq!(user.primary_email(), None)
+    }
+
+    #[test]
+    fn primary_email_some() {
+        let mut user = UserInfo::default();
+        user.emails.push(EmailDetail {
+            email: "test@example.com".to_string(),
+            verified: false,
+            primary: false,
+        });
+        user.emails.push(EmailDetail {
+            email: "primary@example.com".to_string(),
+            verified: true,
+            primary: true,
+        });
+        assert_eq!(
+            user.primary_email(),
+            Some("primary@example.com".to_string())
+        )
+    }
+
+    #[test]
+    fn non_validated_emails() {
+        let mut user = UserInfo::default();
+        user.emails.push(EmailDetail {
+            email: "test@example.com".to_string(),
+            verified: false,
+            primary: false,
+        });
+        user.emails.push(EmailDetail {
+            email: "primary@example.com".to_string(),
+            verified: true,
+            primary: true,
+        });
+        assert_eq!(
+            user.non_validated_emails(),
+            vec!["test@example.com".to_string()]
+        )
+    }
+}
