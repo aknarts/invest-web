@@ -1,7 +1,8 @@
-use web_sys::MouseEvent;
+use web_sys::{HtmlInputElement, MouseEvent};
 use yew::prelude::*;
 use yew::{html, Callback, Html};
 use yew_hooks::UseCounterHandle;
+use time::macros::format_description;
 
 #[derive(Properties, PartialEq)]
 pub struct Props {
@@ -9,8 +10,65 @@ pub struct Props {
     pub counter: UseCounterHandle,
 }
 
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct InvestmentInfo {
+    pub name: String,
+    pub maturity: time::Date,
+    pub expiration: time::Date,
+    pub description: String,
+}
+
 #[function_component(ManageInvestment)]
 pub fn manage_investment(_props: &Props) -> Html {
+    let investment_info = use_state(|| InvestmentInfo {
+        name: String::new(),
+        maturity: time::Date::MIN,
+        expiration: time::Date::MIN,
+        description: String::new(),
+    });
+    let info = (*investment_info).clone();
+    let format = format_description!("[year]-[month]-[day]");
+
+    let oninput_name = {
+        let investment_info = investment_info.clone();
+        Callback::from(move |e: InputEvent| {
+            let input: HtmlInputElement = e.target_unchecked_into();
+            let mut info = (*investment_info).clone();
+            info.name = input.value();
+            investment_info.set(info);
+        })
+    };
+
+    let oninput_description = {
+        let investment_info = investment_info.clone();
+        Callback::from(move |e: InputEvent| {
+            let input: HtmlInputElement = e.target_unchecked_into();
+            let mut info = (*investment_info).clone();
+            info.description = input.value();
+            investment_info.set(info);
+        })
+    };
+
+    let oninput_maturity = {
+        let investment_info = investment_info.clone();
+        Callback::from(move |e: InputEvent| {
+            let input: HtmlInputElement = e.target_unchecked_into();
+            let mut info = (*investment_info).clone();
+            if let Ok(d) = time::Date::parse(&input.value(), &format) { info.maturity = d; };
+            investment_info.set(info);
+        })
+    };
+
+    let oninput_expiration = {
+        let investment_info = investment_info.clone();
+        Callback::from(move |e: InputEvent| {
+            let input: HtmlInputElement = e.target_unchecked_into();
+            let mut info = (*investment_info).clone();
+            if let Ok(d) = time::Date::parse(&input.value(), &format) { info.maturity = d; };
+            investment_info.set(info);
+        })
+    };
+
     html!(
         <>
             <div class="modal-body">
@@ -28,6 +86,8 @@ pub fn manage_investment(_props: &Props) -> Html {
                                 type="text"
                                 id="investmentnameGroup"
                                 placeholder="Investment Name"
+                                value={info.name.clone()}
+                                oninput={oninput_name}
                                 />
                             <label for="investmentnameGroup">{"Investment Name"}</label>
                         </div>
@@ -42,6 +102,7 @@ pub fn manage_investment(_props: &Props) -> Html {
                                 type="date"
                                 id="investmentmaturityGroup"
                                 placeholder="Investment Maturity"
+                                oninput={oninput_maturity}
                                 />
                             <label for="investmentmaturityGroup">{"Investment Maturity"}</label>
                         </div>
@@ -54,13 +115,15 @@ pub fn manage_investment(_props: &Props) -> Html {
                                 type="date"
                                 id="investmentexpirationGroup"
                                 placeholder="Investment Expiration"
+                                oninput={oninput_expiration}
                                 />
                             <label for="investmentexpirationGroup">{"Investment Expiration"}</label>
                         </div>
                     </div>
                     <div class="input-group mb-2">
                         <div class="form-floating">
-                          <textarea class="form-control" placeholder="Leave a comment here" id="floatingTextarea2" style="height: 100px"></textarea>
+                          <textarea class="form-control" placeholder="Leave a comment here" id="floatingTextarea2" style="height: 100px"
+                                oninput={oninput_description}>{info.description.clone()}</textarea>
                           <label for="floatingTextarea2">{"Description"}</label>
                         </div>
                     </div>
