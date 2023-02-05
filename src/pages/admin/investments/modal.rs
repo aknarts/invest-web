@@ -1,8 +1,10 @@
+use std::collections::HashSet;
 use web_sys::{HtmlInputElement, MouseEvent};
 use yew::prelude::*;
 use yew::{html, Callback, Html};
 use yew_hooks::UseCounterHandle;
 use time::macros::format_description;
+use crate::pages::admin::investments::tag::Tag;
 
 #[derive(Properties, PartialEq)]
 pub struct Props {
@@ -16,6 +18,7 @@ pub struct InvestmentInfo {
     pub maturity: time::Date,
     pub expiration: time::Date,
     pub description: String,
+    pub tags: HashSet<String>,
 }
 
 #[function_component(ManageInvestment)]
@@ -25,6 +28,7 @@ pub fn manage_investment(_props: &Props) -> Html {
         maturity: time::Date::MIN,
         expiration: time::Date::MIN,
         description: String::new(),
+        tags: HashSet::new(),
     });
     let info = (*investment_info).clone();
     let format = format_description!("[year]-[month]-[day]");
@@ -68,6 +72,37 @@ pub fn manage_investment(_props: &Props) -> Html {
             investment_info.set(info);
         })
     };
+
+    let oninput_tags = {
+        let investment_info = investment_info.clone();
+        Callback::from(move |e: InputEvent| {
+            let input: HtmlInputElement = e.target_unchecked_into();
+            let mut info = (*investment_info).clone();
+            let current: String = input.value();
+            let mut tags = current.split(",").map(|t| t.trim()).peekable();
+
+            while let Some(tag) = tags.next() {
+                if tags.peek().is_some() {
+                    info.tags.insert(tag.to_string().to_ascii_lowercase());
+                } else {
+                    input.set_value(tag);
+                }
+            }
+            investment_info.set(info);
+        })
+    };
+
+    let remove_tag = {
+        let investment_info = investment_info.clone();
+        Callback::from(move |name: String| {
+            let mut info = (*investment_info).clone();
+            info.tags.remove(&name);
+            investment_info.set(info);
+        })
+    };
+
+    let mut sorted_tags = info.tags.iter().collect::<Vec<&String>>();
+    sorted_tags.sort();
 
     html!(
         <>
@@ -131,11 +166,14 @@ pub fn manage_investment(_props: &Props) -> Html {
                         {"Tags"}
                     </div>
                     <div class="container-fluid p-2">
-                        <span class="badge rounded-pill bg-secondary">{"rental"}<button class="btn btn-sm m-0 py-0 px-1">{"x"}</button></span>
+                        { for sorted_tags.iter().map(|t| html!(
+                            <Tag remove={&remove_tag} name={t.clone().clone()}></Tag>
+                        ))}
                     </div>
                     <div class="input-group mb-3 input-group-sm">
                         <span class="input-group-text">{"Add tag"}</span>
-                        <input type="text" class="form-control" />
+                        <input type="text" class="form-control"
+                            oninput={oninput_tags}/>
                     </div>
                 </fieldset>
                 <span class="h5">
@@ -185,3 +223,4 @@ pub fn manage_investment(_props: &Props) -> Html {
         </>
     )
 }
+
