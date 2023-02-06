@@ -125,7 +125,7 @@ pub fn user_list(props: &Props) -> HtmlResult {
     Ok(html_result)
 }
 
-#[derive(Default, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize)]
+#[derive(Default, Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize)]
 struct UserLine {
     pub id: i64,
     pub username: String,

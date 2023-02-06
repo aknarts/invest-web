@@ -4,7 +4,7 @@ use serde_value::Value;
 use std::fmt;
 use yew::Html;
 
-pub trait TableData: 'static + Default + Clone + Ord + Serialize {
+pub trait TableData: 'static + Default + Clone + PartialOrd + Serialize {
     /// Returns the Html representation of a field. When None, the field is not rendered.
     fn get_field_as_html(&self, field_name: &str) -> Result<Html>;
 
@@ -114,7 +114,7 @@ pub struct TableState {
 #[derive(Clone, Eq, PartialEq, Default)]
 pub struct Table<T>
 where
-    T: TableData,
+    T: TableData + fmt::Debug,
 {
     /// The order of the columns determines the order in which they are displayed.
     pub columns: Vec<Column>,

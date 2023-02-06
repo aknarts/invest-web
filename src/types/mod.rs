@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize, Serializer};
 use std::cmp::Ordering;
 use std::collections::HashMap;
+use std::fmt::{Debug, Formatter};
 use yew_hooks::UseCounterHandle;
 
 pub mod auth;
@@ -15,6 +16,19 @@ pub struct ErrorInfo {
 #[derive(Default, Clone)]
 pub struct WrapCounter(pub Option<UseCounterHandle>);
 
+impl Debug for WrapCounter {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match &self.0 {
+            None => {
+                write!(f, "No Counter")
+            }
+            Some(c) => {
+                write!(f, "Counter [{:?}]", *c)
+            }
+        }
+    }
+}
+
 impl PartialEq<Self> for WrapCounter {
     fn eq(&self, _: &Self) -> bool {
         true
@@ -25,8 +39,8 @@ impl Eq for WrapCounter {}
 
 impl Serialize for WrapCounter {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
+        where
+            S: Serializer,
     {
         serializer.serialize_i8(0)
     }
