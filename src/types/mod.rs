@@ -2,6 +2,7 @@ use serde::{Deserialize, Serialize, Serializer};
 use std::cmp::Ordering;
 use std::collections::HashMap;
 use std::fmt::{Debug, Formatter};
+use yew::Callback;
 use yew_hooks::UseCounterHandle;
 
 pub mod auth;
@@ -39,8 +40,8 @@ impl Eq for WrapCounter {}
 
 impl Serialize for WrapCounter {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-        where
-            S: Serializer,
+    where
+        S: Serializer,
     {
         serializer.serialize_i8(0)
     }
@@ -53,6 +54,51 @@ impl Ord for WrapCounter {
 }
 
 impl PartialOrd for WrapCounter {
+    fn partial_cmp(&self, _: &Self) -> Option<Ordering> {
+        Some(Ordering::Equal)
+    }
+}
+
+#[derive(Default, Clone)]
+pub struct WrapCallback(pub Option<Callback<String>>);
+
+impl Debug for WrapCallback {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match &self.0 {
+            None => {
+                write!(f, "No callback")
+            }
+            Some(_) => {
+                write!(f, "Callback")
+            }
+        }
+    }
+}
+
+impl PartialEq<Self> for WrapCallback {
+    fn eq(&self, _: &Self) -> bool {
+        true
+    }
+}
+
+impl Eq for WrapCallback {}
+
+impl Serialize for WrapCallback {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        serializer.serialize_i8(0)
+    }
+}
+
+impl Ord for WrapCallback {
+    fn cmp(&self, _: &Self) -> Ordering {
+        Ordering::Equal
+    }
+}
+
+impl PartialOrd for WrapCallback {
     fn partial_cmp(&self, _: &Self) -> Option<Ordering> {
         Some(Ordering::Equal)
     }

@@ -1,6 +1,6 @@
 use yew::prelude::*;
 
-#[derive(Default, PartialEq)]
+#[derive(Default, Eq, PartialEq)]
 #[allow(dead_code)]
 pub enum Size {
     Small,
@@ -50,14 +50,16 @@ pub fn modal(props: &Prop) -> Html {
         Size::Fullscreen => Some("modal-fullscreen"),
     };
 
-    let centered = match props.centered {
-        true => Some("modal-dialog-centered"),
-        false => None,
+    let centered = if props.centered {
+        Some("modal-dialog-centered")
+    } else {
+        None
     };
 
-    let scrollable = match props.scrollable {
-        true => Some("modal-dialog-scrollable"),
-        false => None,
+    let scrollable = if props.scrollable {
+        Some("modal-dialog-scrollable")
+    } else {
+        None
     };
 
     html!(

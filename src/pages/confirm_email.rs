@@ -83,7 +83,7 @@ pub fn confirm() -> Html {
                 }
             }
 
-            if let Some(Error::BadRequest) = &do_confirm.error {
+            if matches!(&do_confirm.error, Some(Error::BadRequest)) {
                 confirmation.set(Status::Bad);
             }
             || ()

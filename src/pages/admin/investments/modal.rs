@@ -1,16 +1,16 @@
-use std::collections::HashSet;
-use std::convert::Infallible;
+use crate::components::table::types::{ColumnBuilder, Table, TableData};
+use crate::components::table::Options;
+use crate::pages::admin::investments::tag::Tag;
+use crate::types::WrapCallback;
+use serde::Serialize;
 use serde_value::Value;
+use std::collections::HashSet;
+use time::macros::format_description;
+use tracing::debug;
 use web_sys::{HtmlInputElement, MouseEvent};
 use yew::prelude::*;
 use yew::{html, Callback, Html};
 use yew_hooks::UseCounterHandle;
-use time::macros::format_description;
-use serde::Serialize;
-use tracing::debug;
-use crate::components::table::Options;
-use crate::components::table::types::{ColumnBuilder, Table, TableData};
-use crate::pages::admin::investments::tag::Tag;
 
 #[derive(Properties, PartialEq)]
 pub struct Props {
@@ -54,7 +54,6 @@ pub fn manage_investment(_props: &Props) -> Html {
         value: 0.0,
     });
     let info = (*investment_info).clone();
-    let cost = (*cost_info).clone();
     let format = format_description!("[year]-[month]-[day]");
 
     let oninput_name = {
@@ -82,7 +81,9 @@ pub fn manage_investment(_props: &Props) -> Html {
         Callback::from(move |e: InputEvent| {
             let input: HtmlInputElement = e.target_unchecked_into();
             let mut info = (*cost_info).clone();
-            if let Ok(v) = input.value().parse::<f64>() { info.value = v; }
+            if let Ok(v) = input.value().parse::<f64>() {
+                info.value = v;
+            }
             cost_info.set(info);
         })
     };
@@ -93,8 +94,11 @@ pub fn manage_investment(_props: &Props) -> Html {
         Callback::from(move |_| {
             let mut info = (*cost_info).clone();
             let mut invest_info = (*investment_info).clone();
-            invest_info.costs.push(InvestmentCost { name: info.name.clone(), value: info.value });
-            debug!("Costs: {:?}", invest_info.costs);
+            invest_info.costs.retain(|c| c.name != info.name);
+            invest_info.costs.push(InvestmentCost {
+                name: info.name.clone(),
+                value: info.value,
+            });
             info.name = String::new();
             info.value = 0.0;
             investment_info.set(invest_info);
@@ -118,7 +122,9 @@ pub fn manage_investment(_props: &Props) -> Html {
         Callback::from(move |e: InputEvent| {
             let input: HtmlInputElement = e.target_unchecked_into();
             let mut info = (*investment_info).clone();
-            if let Ok(v) = input.value().parse::<f64>() { info.value = v; }
+            if let Ok(v) = input.value().parse::<f64>() {
+                info.value = v;
+            }
             investment_info.set(info);
         })
     };
@@ -128,7 +134,9 @@ pub fn manage_investment(_props: &Props) -> Html {
         Callback::from(move |e: InputEvent| {
             let input: HtmlInputElement = e.target_unchecked_into();
             let mut info = (*investment_info).clone();
-            if let Ok(d) = time::Date::parse(&input.value(), &format) { info.maturity = d; };
+            if let Ok(d) = time::Date::parse(&input.value(), &format) {
+                info.maturity = d;
+            };
             investment_info.set(info);
         })
     };
@@ -138,7 +146,9 @@ pub fn manage_investment(_props: &Props) -> Html {
         Callback::from(move |e: InputEvent| {
             let input: HtmlInputElement = e.target_unchecked_into();
             let mut info = (*investment_info).clone();
-            if let Ok(d) = time::Date::parse(&input.value(), &format) { info.maturity = d; };
+            if let Ok(d) = time::Date::parse(&input.value(), &format) {
+                info.maturity = d;
+            };
             investment_info.set(info);
         })
     };
@@ -149,7 +159,7 @@ pub fn manage_investment(_props: &Props) -> Html {
             let input: HtmlInputElement = e.target_unchecked_into();
             let mut info = (*investment_info).clone();
             let current: String = input.value();
-            let mut tags = current.split(",").map(|t| t.trim()).peekable();
+            let mut tags = current.split(',').map(str::trim).peekable();
 
             while let Some(tag) = tags.next() {
                 if tags.peek().is_some() {
@@ -171,6 +181,30 @@ pub fn manage_investment(_props: &Props) -> Html {
         })
     };
 
+    let remove_cost = {
+        let investment_info = investment_info.clone();
+        Callback::from(move |name: String| {
+            let mut info = (*investment_info).clone();
+            info.costs.retain(|c| c.name != name);
+            investment_info.set(info);
+        })
+    };
+
+    let on_image_select = {
+        Callback::from(move |e: Event| {
+            let input: HtmlInputElement = e.target_unchecked_into();
+            load_files(input.files());
+        })
+    };
+
+    let on_image_drop = {
+        Callback::from(move |e: DragEvent| {
+            e.prevent_default();
+            if let Some(data) = e.data_transfer() {
+                load_files(data.files());
+            };
+        })
+    };
 
     let columns = vec![
         ColumnBuilder::new("name")
@@ -193,10 +227,13 @@ pub fn manage_investment(_props: &Props) -> Html {
     ];
     let mut data = Vec::new();
     for cost in investment_info.costs.clone() {
-        debug!("Pushing cost: {:?}", cost);
-        data.push(CostLine { name: cost.name.clone(), value: cost.value })
-    };
-    debug!("Table data: {:?}", data);
+        data.push(CostLine {
+            name: cost.name.clone(),
+            value: cost.value,
+            remove: WrapCallback(Some(remove_cost.clone())),
+        });
+    }
+
     let options = Options {
         unordered_class: Some("fa-sort".to_string()),
         ascending_class: Some("fa-sort-up".to_string()),
@@ -206,6 +243,15 @@ pub fn manage_investment(_props: &Props) -> Html {
 
     let mut sorted_tags = info.tags.iter().collect::<Vec<&String>>();
     sorted_tags.sort();
+    let key = data.len();
+
+    let file_picker = use_node_ref();
+    let f_picker = file_picker.clone();
+    let click_add_image = Callback::from(move |_| {
+        if let Some(element) = f_picker.cast::<HtmlInputElement>() {
+            element.click();
+        };
+    });
 
     html!(
         <>
@@ -270,7 +316,7 @@ pub fn manage_investment(_props: &Props) -> Html {
                     </div>
                     <div class="container-fluid p-2">
                         { for sorted_tags.iter().map(|t| html!(
-                            <Tag remove={&remove_tag} name={t.clone().clone()}></Tag>
+                            <Tag remove={&remove_tag} name={<&std::string::String>::clone(t).clone()}></Tag>
                         ))}
                     </div>
                     <div class="input-group mb-3 input-group-sm">
@@ -302,7 +348,7 @@ pub fn manage_investment(_props: &Props) -> Html {
                         {"Costs"}
                     </div>
                     <div class="input-group mb-2">
-                        <Table<CostLine> {options} classes={classes!("table", "table-hover")} columns={columns} data={data} orderable={true}/>
+                        <Table<CostLine> {options} classes={classes!("table", "table-hover")} columns={columns} data={data} orderable={true} key={key}/>
                         <div class="input-group-text">
                             <input
                                 type="text"
@@ -324,7 +370,15 @@ pub fn manage_investment(_props: &Props) -> Html {
                 <div class="h5">
                     {"Pictures"}
                 </div>
-                <button type="button" class="btn btn-outline-secondary btn-lg px-5 py-5">{"+"}</button>
+                <button type="button" class="btn btn-outline-secondary btn-lg px-5 py-5" onclick={click_add_image}
+                        ondrop={on_image_drop}
+                        ondragover={Callback::from(|event: DragEvent| {
+                            event.prevent_default();
+                        })}
+                        ondragenter={Callback::from(|event: DragEvent| {
+                            event.prevent_default();
+                        })}>{"+"}</button>
+                <input ref={file_picker} type="file" accept="image/jpeg" style="display:none;" onchange={on_image_select} multiple={true}/>
             </div>
             <div class="modal-footer">
                 <button type="submit" class="btn btn-primary">{"Create"}</button>
@@ -333,18 +387,33 @@ pub fn manage_investment(_props: &Props) -> Html {
     )
 }
 
+fn load_files(files: Option<web_sys::FileList>) {
+    if let Some(list) = files {
+        for i in 0..list.length() {
+            if let Some(file) = list.get(i) {
+                let gf = gloo::file::File::from(file);
+                if gf.raw_mime_type().eq("image/jpeg") {
+                    debug!("Name: {}", gf.name());
+                    debug!("Type: {}", gf.raw_mime_type());
+                }
+            }
+        }
+    }
+}
+
 #[derive(Default, Debug, Clone, PartialEq, PartialOrd, Serialize)]
 struct CostLine {
     name: String,
     value: f64,
+    remove: WrapCallback,
 }
 
 impl TableData for CostLine {
     fn get_field_as_html(&self, field_name: &str) -> crate::components::table::error::Result<Html> {
-        debug!("Getting: {field_name}");
         let html = match field_name {
             "name" => html!({ &self.name }),
             "value" => html!({ format!("{:.2}", &self.value) }),
+            "actions" => html!(<button type="button" class="btn btn-danger">{"-"}</button>),
             &_ => {
                 html!()
             }
@@ -352,18 +421,19 @@ impl TableData for CostLine {
         Ok(html)
     }
 
-    fn get_field_as_value(&self, field_name: &str) -> crate::components::table::error::Result<Value> {
-        debug!("Getting value: {field_name}");
+    fn get_field_as_value(
+        &self,
+        field_name: &str,
+    ) -> crate::components::table::error::Result<Value> {
         let value = match field_name {
             "name" => serde_value::to_value(&self.name),
-            "value" => serde_value::to_value(&self.value),
+            "value" => serde_value::to_value(self.value),
             &_ => serde_value::to_value(""),
         };
         Ok(value.unwrap())
     }
 
-    fn matches_search(&self, needle: Option<String>) -> bool {
-        debug!("Testing search");
+    fn matches_search(&self, _needle: Option<String>) -> bool {
         true
     }
 }

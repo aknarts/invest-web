@@ -4,7 +4,7 @@ mod tag;
 
 use crate::pages::admin::investments::list::InvestmentsList;
 use yew::prelude::*;
-use yew_hooks::use_counter;
+use yew_hooks::prelude::*;
 
 #[function_component(Investments)]
 pub fn investments() -> Html {

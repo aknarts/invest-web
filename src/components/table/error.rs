@@ -15,8 +15,7 @@ impl fmt::Display for Error {
                 format!("Invalid field name given: '{field_name}'.")
             }
             Self::NonRenderableField(field_name) => format!(
-                "Could not render field '{}' for which no HTML representation is defined.",
-                field_name
+                "Could not render field '{field_name}' for which no HTML representation is defined."
             ),
         };
         write!(f, "{msg}")

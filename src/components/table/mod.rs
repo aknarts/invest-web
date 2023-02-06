@@ -4,7 +4,6 @@ pub mod types;
 
 use std::cmp::Reverse;
 use std::fmt::Debug;
-use tracing::debug;
 use types::{Column, Table, TableData, TableOrder, TableState};
 use yew::html;
 use yew::prelude::*;
@@ -20,8 +19,8 @@ pub struct Options {
 /// Properties of the Table component.
 #[derive(Properties, Clone, Eq, PartialEq, Default)]
 pub struct Props<T>
-    where
-        T: TableData + Debug,
+where
+    T: TableData + Debug,
 {
     pub columns: Vec<Column>,
     pub data: Vec<T>,
@@ -41,8 +40,8 @@ pub enum Msg {
 }
 
 impl<T> Component for Table<T>
-    where
-        T: TableData + Debug,
+where
+    T: TableData + Debug,
 {
     type Message = Msg;
     type Properties = Props<T>;
@@ -50,7 +49,6 @@ impl<T> Component for Table<T>
     fn create(ctx: &Context<Self>) -> Self {
         let props = ctx.props();
         let column_number = props.columns.len();
-        debug!("Creating table");
         Self {
             columns: props.columns.clone(),
             data: props.data.clone(),
@@ -80,7 +78,10 @@ impl<T> Component for Table<T>
                         Some(f) => match self.state.order.get(i) {
                             Some(order) => {
                                 match order {
-                                    Unordered => self.data.sort_by_cached_key(|x| x.get_field_as_value(&self.columns.first().unwrap().name).unwrap()),
+                                    Unordered => self.data.sort_by_cached_key(|x| {
+                                        x.get_field_as_value(&self.columns.first().unwrap().name)
+                                            .unwrap()
+                                    }),
                                     Ascending => self
                                         .data
                                         .sort_by_cached_key(|x| x.get_field_as_value(f).unwrap()),
@@ -102,8 +103,6 @@ impl<T> Component for Table<T>
     fn view(&self, ctx: &Context<Self>) -> Html {
         let search = ctx.props().search.clone();
         let classes = ctx.props().classes.clone();
-        debug!("Building view");
-        debug!("Data: {:?}", self.data);
         html!(
             <table class={classes!(classes)}>
                 <thead>
@@ -118,8 +117,8 @@ impl<T> Component for Table<T>
 }
 
 impl<T> Table<T>
-    where
-        T: TableData + Debug,
+where
+    T: TableData + Debug,
 {
     fn view_column<'a>(&'a self, ctx: &Context<Self>, index: usize, column: &'a Column) -> Html {
         let get_header_sorting_class = |index: usize| {
@@ -151,7 +150,6 @@ impl<T> Table<T>
     }
 
     fn view_row(&self, row: &T, search: Option<String>) -> Html {
-        debug!("Creating row");
         if row.matches_search(search) {
             html!(
                 <tr>
