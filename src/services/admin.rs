@@ -1,6 +1,9 @@
 use crate::error::Error;
-use crate::services::requests::{request_delete, request_get, request_post, request_put};
+use crate::services::requests::{
+    request_delete, request_get, request_post, request_post_multipart, request_put,
+};
 use crate::types::auth::{ApiResult, EmailDetail};
+use reqwest::multipart::Form;
 use serde::{Deserialize, Serialize};
 use std::cmp::Ordering;
 use std::collections::HashSet;
@@ -104,4 +107,8 @@ pub async fn delete_role(role: RoleId) -> Result<ApiResult, Error> {
 
 pub async fn get_investments_list() -> Result<Vec<Role>, Error> {
     request_get::<Vec<Role>>("/admin/roles".to_string()).await
+}
+
+pub async fn upload_picture(multipart: Form) -> Result<ApiResult, Error> {
+    request_post_multipart::<ApiResult>("/pictures".to_string(), multipart).await
 }

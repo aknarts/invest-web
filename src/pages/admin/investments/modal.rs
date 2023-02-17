@@ -1,10 +1,12 @@
 use crate::components::table::types::{ColumnBuilder, Table, TableData};
 use crate::components::table::Options;
+use crate::pages::admin::investments::picture::Picture;
 use crate::pages::admin::investments::tag::Tag;
 use crate::types::WrapCallback;
+use gloo::file::File;
 use serde::Serialize;
 use serde_value::Value;
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use time::macros::format_description;
 use tracing::debug;
 use web_sys::{HtmlInputElement, MouseEvent};
@@ -22,6 +24,20 @@ pub struct Props {
 pub struct InvestmentCost {
     pub name: String,
     pub value: f64,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct PictureInfo {
+    pub name: String,
+    pub mime: String,
+    pub picture: File,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct PictureNode {
+    pub name: String,
+    pub order: usize,
+    pub node: Html,
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -53,6 +69,9 @@ pub fn manage_investment(_props: &Props) -> Html {
         name: String::new(),
         value: 0.0,
     });
+
+    let pictures: UseStateHandle<HashMap<String, PictureInfo>> = use_state(|| HashMap::new());
+    let picture_nodes: UseStateHandle<HashMap<String, PictureNode>> = use_state(|| HashMap::new());
     let info = (*investment_info).clone();
     let format = format_description!("[year]-[month]-[day]");
 
@@ -191,17 +210,20 @@ pub fn manage_investment(_props: &Props) -> Html {
     };
 
     let on_image_select = {
+        let pictures = pictures.clone();
         Callback::from(move |e: Event| {
             let input: HtmlInputElement = e.target_unchecked_into();
-            load_files(input.files());
+            process_pictures(pictures.clone(), input.files());
         })
     };
 
     let on_image_drop = {
+        let pictures = pictures.clone();
+
         Callback::from(move |e: DragEvent| {
             e.prevent_default();
-            if let Some(data) = e.data_transfer() {
-                load_files(data.files());
+            if let Some(input) = e.data_transfer() {
+                process_pictures(pictures.clone(), input.files());
             };
         })
     };
@@ -252,6 +274,27 @@ pub fn manage_investment(_props: &Props) -> Html {
             element.click();
         };
     });
+
+    let pict = (*pictures).clone();
+    let mut nodes = (*picture_nodes).clone();
+    if pict.len() != nodes.len() {
+        for (name, data) in pict.into_iter() {
+            if let None = nodes.get(&name) {
+                debug!("Preparing node for {name}");
+                nodes.insert(
+                    name.clone(),
+                    PictureNode {
+                        name: name.clone(),
+                        order: nodes.len(),
+                        node: html!(<Picture name={name.clone()} data={data.clone()}></Picture>),
+                    },
+                );
+            };
+        }
+        picture_nodes.set(nodes);
+    }
+
+    let pics = (*picture_nodes).clone();
 
     html!(
         <>
@@ -370,15 +413,18 @@ pub fn manage_investment(_props: &Props) -> Html {
                 <div class="h5">
                     {"Pictures"}
                 </div>
-                <button type="button" class="btn btn-outline-secondary btn-lg px-5 py-5" onclick={click_add_image}
+
+                <button type="button" class="btn btn-outline-secondary btn-lg px-5 py-5" style="width:100%" onclick={click_add_image}
                         ondrop={on_image_drop}
                         ondragover={Callback::from(|event: DragEvent| {
                             event.prevent_default();
                         })}
                         ondragenter={Callback::from(|event: DragEvent| {
                             event.prevent_default();
-                        })}>{"+"}</button>
+                        })}>{"Drag or Click"}</button>
                 <input ref={file_picker} type="file" accept="image/jpeg" style="display:none;" onchange={on_image_select} multiple={true}/>
+                { for pics.iter().map(|(_, node)| node.node.clone()
+                )}
             </div>
             <div class="modal-footer">
                 <button type="submit" class="btn btn-primary">{"Create"}</button>
@@ -387,18 +433,42 @@ pub fn manage_investment(_props: &Props) -> Html {
     )
 }
 
-fn load_files(files: Option<web_sys::FileList>) {
+fn process_pictures(
+    pictures: UseStateHandle<HashMap<String, PictureInfo>>,
+    input: Option<web_sys::FileList>,
+) {
+    let pic = load_files(input);
+    let mut pict = (*pictures).clone();
+    for p in pic {
+        let name = p.name().clone();
+        debug!("Processing: {name}");
+        let mime = p.raw_mime_type().clone();
+
+        pict.insert(
+            name.clone(),
+            PictureInfo {
+                name: name.clone(),
+                mime: mime.clone(),
+                picture: p.clone(),
+            },
+        );
+    }
+    pictures.set(pict);
+}
+
+fn load_files(files: Option<web_sys::FileList>) -> Vec<File> {
+    let mut result = vec![];
     if let Some(list) = files {
         for i in 0..list.length() {
             if let Some(file) = list.get(i) {
                 let gf = gloo::file::File::from(file);
                 if gf.raw_mime_type().eq("image/jpeg") {
-                    debug!("Name: {}", gf.name());
-                    debug!("Type: {}", gf.raw_mime_type());
+                    result.push(gf);
                 }
             }
         }
     }
+    return result;
 }
 
 #[derive(Default, Debug, Clone, PartialEq, PartialOrd, Serialize)]

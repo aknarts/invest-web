@@ -1,5 +1,6 @@
 mod list;
 mod modal;
+mod picture;
 mod tag;
 
 use crate::pages::admin::investments::list::InvestmentsList;

@@ -126,6 +126,98 @@ where
     }
 }
 
+/// build all kinds of http request: post/get/delete etc.
+pub async fn request_multipart<T>(
+    method: reqwest::Method,
+    url: String,
+    body: reqwest::multipart::Form,
+) -> Result<T, Error>
+where
+    T: DeserializeOwned + 'static + std::fmt::Debug,
+{
+    let allow_body = method == reqwest::Method::POST
+        || method == reqwest::Method::PUT
+        || method == reqwest::Method::PATCH
+        || method == reqwest::Method::DELETE;
+    let url = format!("{API_ROOT}{url}");
+    let mut builder = reqwest::Client::new().request(method, &url);
+    if let Some(token) = get_token() {
+        builder = builder.bearer_auth(token);
+    }
+
+    debug!("url: {}", url);
+
+    if allow_body {
+        builder = builder.multipart(body);
+    }
+
+    let response = builder.send().await;
+
+    if let Ok(data) = response {
+        if data.status().is_success() {
+            let data: Result<T, _> = data.json::<T>().await;
+            data.map_or(Err(Error::DeserializeError), |data| {
+                debug!("Response: {:?}", data);
+                Ok(data)
+            })
+        } else {
+            match data.status().as_u16() {
+                400 => Err(Error::BadRequest),
+                401 => {
+                    let data: Result<ApiResult, _> = data.json::<ApiResult>().await;
+                    match data {
+                        Ok(d) => Err(Error::Unauthorized(d.result)),
+                        Err(e) => {
+                            debug!("Failed to deserialize response: {e}");
+                            Err(Error::DeserializeError)
+                        }
+                    }
+                }
+                403 => {
+                    let data: Result<ApiResult, _> = data.json::<ApiResult>().await;
+                    match data {
+                        Ok(d) => Err(Error::Forbidden(d.result)),
+                        Err(e) => {
+                            debug!("Failed to deserialize response: {e}");
+                            Err(Error::DeserializeError)
+                        }
+                    }
+                }
+                404 => Err(Error::NotFound),
+                409 => {
+                    let data: Result<ApiResult, _> = data.json::<ApiResult>().await;
+                    match data {
+                        Ok(d) => Err(Error::Conflict(d.result)),
+                        Err(e) => {
+                            debug!("Failed to deserialize response: {e}");
+                            Err(Error::DeserializeError)
+                        }
+                    }
+                }
+                500 => {
+                    let data: Result<ApiResult, _> = data.json::<ApiResult>().await;
+                    match data {
+                        Ok(d) => Err(Error::InternalServerError(d.result)),
+                        Err(e) => {
+                            debug!("Failed to deserialize response: {e}");
+                            Err(Error::InternalServerError(String::new()))
+                        }
+                    }
+                }
+                422 => {
+                    let data: Result<ErrorInfo, _> = data.json::<ErrorInfo>().await;
+                    data.map_or(Err(Error::DeserializeError), |data| {
+                        Err(Error::UnprocessableEntity(data))
+                    })
+                }
+                _ => Err(Error::RequestError),
+            }
+        }
+    } else {
+        Err(Error::RequestError)
+    }
+}
+
 /// Delete request
 #[allow(dead_code)]
 pub async fn request_delete<B, T>(url: String, body: B) -> Result<T, Error>
@@ -151,6 +243,17 @@ where
     B: Serialize + std::fmt::Debug,
 {
     request(reqwest::Method::POST, url, body).await
+}
+
+/// Post request with a body
+pub async fn request_post_multipart<T>(
+    url: String,
+    body: reqwest::multipart::Form,
+) -> Result<T, Error>
+where
+    T: DeserializeOwned + 'static + std::fmt::Debug,
+{
+    request_multipart(reqwest::Method::POST, url, body).await
 }
 
 /// Put request with a body
