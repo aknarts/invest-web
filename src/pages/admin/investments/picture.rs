@@ -39,7 +39,7 @@ pub fn picture(props: &Props) -> Html {
                     }
                     Ok(p) => p,
                 };
-                multipart.part(&name, file)
+                multipart.part(name.clone(), file)
             } else {
                 return Err(error::Error::BadRequest);
             };
@@ -68,7 +68,7 @@ pub fn picture(props: &Props) -> Html {
     let b = &(*bytes);
 
     html!(
-        <div class="card mb-3" style="max-width: 100%;">
+        <div class="card mb-3" style="max-width: 100%;" draggable="true">
             <div class="row no-gutters">
                 <div class="col-md-4 d-flex align-items-center">
                     {
