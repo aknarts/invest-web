@@ -6,6 +6,7 @@ use crate::types::WrapCallback;
 use gloo::file::File;
 use serde::Serialize;
 use serde_value::Value;
+use std::borrow::BorrowMut;
 use std::collections::{HashMap, HashSet};
 use time::macros::format_description;
 use tracing::debug;
@@ -31,6 +32,8 @@ pub struct PictureInfo {
     pub name: String,
     pub mime: String,
     pub picture: File,
+    pub data: Vec<u8>,
+    pub order: usize,
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -209,6 +212,22 @@ pub fn manage_investment(_props: &Props) -> Html {
         })
     };
 
+    let image_loaded = {
+        let mut pictures = pictures.clone();
+        Callback::from(move |data: (String, Vec<u8>)| {
+            let name = data.0;
+            let mut bytes = data.1;
+            let mut pict = (*pictures).clone();
+            if let Some(pic) = pict.get(&name) {
+                let mut new = pic.clone();
+                new.data.append(&mut bytes);
+                pict.insert(name, new);
+            };
+            pictures.set(pict);
+            debug!("Image loaded");
+        })
+    };
+
     let on_image_select = {
         let pictures = pictures.clone();
         Callback::from(move |e: Event| {
@@ -275,26 +294,7 @@ pub fn manage_investment(_props: &Props) -> Html {
         };
     });
 
-    let pict = (*pictures).clone();
-    let mut nodes = (*picture_nodes).clone();
-    if pict.len() != nodes.len() {
-        for (name, data) in pict.into_iter() {
-            if let None = nodes.get(&name) {
-                debug!("Preparing node for {name}");
-                nodes.insert(
-                    name.clone(),
-                    PictureNode {
-                        name: name.clone(),
-                        order: nodes.len(),
-                        node: html!(<Picture name={name.clone()} data={data.clone()}></Picture>),
-                    },
-                );
-            };
-        }
-        picture_nodes.set(nodes);
-    }
-
-    let pics = (*picture_nodes).clone();
+    let pics = (*pictures).clone();
 
     html!(
         <>
@@ -423,7 +423,8 @@ pub fn manage_investment(_props: &Props) -> Html {
                             event.prevent_default();
                         })}>{"Drag or Click"}</button>
                 <input ref={file_picker} type="file" accept="image/jpeg" style="display:none;" onchange={on_image_select} multiple={true}/>
-                { for pics.iter().map(|(_, node)| node.node.clone()
+                { for pics.iter().map(|(name, data)|
+                    { html!(<Picture bytes={data.data.clone()} name={name.clone()} loaded={&image_loaded} position={data.order.clone()} data={data.clone()}></Picture>)}
                 )}
             </div>
             <div class="modal-footer">
@@ -443,13 +444,15 @@ fn process_pictures(
         let name = p.name().clone();
         debug!("Processing: {name}");
         let mime = p.raw_mime_type().clone();
-
+        let position = pict.len();
         pict.insert(
             name.clone(),
             PictureInfo {
                 name: name.clone(),
                 mime: mime.clone(),
                 picture: p.clone(),
+                data: vec![],
+                order: position,
             },
         );
     }
