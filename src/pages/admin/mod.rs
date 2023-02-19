@@ -1,4 +1,4 @@
-mod investments;
+pub(crate) mod investments;
 mod roles;
 mod users;
 use crate::app::Route;

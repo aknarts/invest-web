@@ -1,3 +1,4 @@
+use crate::pages::admin::investments::pictures::Pictures;
 use yew::prelude::*;
 
 #[function_component(Home)]
@@ -13,6 +14,7 @@ pub fn home() -> Html {
             <div class="tile is-parent container">
                 { view_info_tiles() }
             </div>
+            <Pictures />
         </div>
     )
 }

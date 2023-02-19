@@ -1,9 +1,8 @@
 use crate::error;
-use crate::pages::admin::investments::modal::PictureInfo;
+use crate::pages::admin::investments::pictures::PictureInfo;
 use crate::services::admin::upload_picture;
 use base64::engine::general_purpose;
 use base64::Engine;
-use std::borrow::Borrow;
 use tracing::{debug, error};
 use yew::prelude::*;
 use yew::{html, Html};
@@ -22,17 +21,19 @@ pub struct Props {
 pub fn picture(props: &Props) -> Html {
     let name = props.name.clone();
     let data = props.data.clone();
-    let position = props.position.clone();
+    let position = props.position;
 
     let reader = use_state(|| None);
     let uploaded = use_state(|| false);
 
     let upload_images = {
-        let b = data.data.clone();
+        let b = data.bytes.clone();
         let mime = data.mime.clone();
         let name = name.clone();
         use_async(async move {
-            let multipart = if !b.is_empty() {
+            let multipart = if b.is_empty() {
+                return Err(error::Error::BadRequest);
+            } else {
                 let multipart = reqwest::multipart::Form::new();
                 let mut file = reqwest::multipart::Part::bytes(b);
                 file = file.file_name(name.clone());
@@ -44,8 +45,6 @@ pub fn picture(props: &Props) -> Html {
                     Ok(p) => p,
                 };
                 multipart.part(name.clone(), file)
-            } else {
-                return Err(error::Error::BadRequest);
             };
 
             upload_picture(multipart).await
@@ -54,8 +53,7 @@ pub fn picture(props: &Props) -> Html {
 
     if reader.is_none() {
         let task = {
-            let bytes = data.data.clone();
-            let loaded = props.loaded.borrow();
+            let loaded = props.loaded.clone();
             let name = name.clone();
             gloo::file::callbacks::read_as_bytes(&data.picture, move |res| match res {
                 Ok(contents) => {
@@ -71,7 +69,7 @@ pub fn picture(props: &Props) -> Html {
         reader.set(Some(task));
     }
 
-    let b = &data.data;
+    let b = &data.bytes;
 
     html!(
         <div class="card mb-3" style="max-width: 100%;" draggable="true">
@@ -83,7 +81,7 @@ pub fn picture(props: &Props) -> Html {
                                   <span class="sr-only">{"Loading..."}</span>
                                 </div>)
                         } else { html!(<>
-                                <img class="card-img" src={format!("data:{};base64,{}",data.mime, general_purpose::STANDARD.encode(&b))} style="max-width:100%; max-height:100%;"/>
+                                <img class="card-img" src={format!("data:{};base64,{}",data.mime, general_purpose::STANDARD.encode(b))} style="max-width:100%; max-height:100%;"/>
                                 <div class="card-img position-absolute top-0 start-0 spinner-border m-auto" role="status">
                                     <span class="sr-only">{"Loading..."}</span>
                                 </div>
@@ -94,7 +92,7 @@ pub fn picture(props: &Props) -> Html {
                 </div>
                 <div class="col-md-8">
                     <div class="card-body">
-                        <h5 class="card-title"><span class="font-weight-bold">{format!("#{} ", position)}</span>{name}<br /><small class="card-title text-muted">{data.mime}</small></h5>
+                        <h5 class="card-title"><span class="font-weight-bold">{format!("#{position} ")}</span>{name}<br /><small class="card-title text-muted">{data.mime}</small></h5>
                     </div>
                 </div>
             </div>
