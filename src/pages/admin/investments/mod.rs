@@ -1,7 +1,7 @@
 mod list;
 mod modal;
 mod picture;
-pub(crate) mod pictures;
+pub mod pictures;
 mod tag;
 
 use crate::pages::admin::investments::list::InvestmentsList;
