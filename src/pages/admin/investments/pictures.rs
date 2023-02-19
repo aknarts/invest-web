@@ -1,4 +1,4 @@
-use crate::pages::admin::investments::picture::Picture;
+use super::picture::Picture;
 use gloo::file::File;
 use tracing::debug;
 use web_sys::HtmlInputElement;
@@ -62,7 +62,9 @@ pub fn pictures(_props: &Props) -> Html {
                         event.prevent_default();
                     })}>{"Drag or Click"}</button>
             <input ref={file_picker} type="file" accept="image/jpeg" style="display:none;" onchange={on_image_select} multiple={true}/>
-            { for pics.iter().rev().cloned() }
+            <div key={pics.len()}>
+                { for pics.iter().cloned() }
+            </div>
         </>
     )
 }

@@ -1,5 +1,5 @@
+use super::pictures::PictureInfo;
 use crate::error;
-use crate::pages::admin::investments::pictures::PictureInfo;
 use crate::services::admin::upload_picture;
 use base64::engine::general_purpose;
 use base64::Engine;
