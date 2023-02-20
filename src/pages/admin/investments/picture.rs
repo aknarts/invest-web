@@ -6,7 +6,7 @@ use base64::Engine;
 use tracing::{debug, error, warn};
 use yew::prelude::*;
 use yew::{html, Html};
-use yew_hooks::use_async;
+use yew_hooks::{use_async, use_counter};
 
 #[derive(Properties, PartialEq)]
 pub struct Props {
@@ -24,7 +24,7 @@ pub fn picture(props: &Props) -> Html {
     let path = use_state(|| None);
     let error = use_state(|| None);
     let being_dragged = use_state(|| false);
-    let drag_over = use_state(|| false);
+    let drag_over = use_counter(0);
 
     let upload_images = {
         let b = (*bytes).clone();
@@ -78,7 +78,6 @@ pub fn picture(props: &Props) -> Html {
             let bytes = bytes.clone();
             gloo::file::callbacks::read_as_bytes(&data.picture, move |res| match res {
                 Ok(contents) => {
-                    debug!("Finished loading file");
                     bytes.set(Some(contents));
                     upload_images.run();
                 }
@@ -94,10 +93,13 @@ pub fn picture(props: &Props) -> Html {
         let drag_over = drag_over.clone();
         Callback::from(move |e: DragEvent| {
             if let Some(input) = e.data_transfer() {
-                match input.get_data("text/plain") {
-                    Ok(value) => {
-                        debug!("Dragged over: {}", value);
-                        drag_over.set(true);
+                if validate_list(input.items()).is_none() {
+                    return;
+                }
+
+                match input.get_data("text/id") {
+                    Ok(_) => {
+                        drag_over.increase();
                     }
                     Err(e) => {
                         warn!("unable to get data: {:?}", e);
@@ -111,9 +113,12 @@ pub fn picture(props: &Props) -> Html {
         let drag_over = drag_over.clone();
         Callback::from(move |e: DragEvent| {
             if let Some(input) = e.data_transfer() {
-                match input.get_data("text/plain") {
+                if validate_list(input.items()).is_none() {
+                    return;
+                }
+                match input.get_data("text/id") {
                     Ok(_) => {
-                        drag_over.set(false);
+                        drag_over.decrease();
                     }
                     Err(e) => {
                         warn!("unable to get data: {:?}", e);
@@ -131,10 +136,14 @@ pub fn picture(props: &Props) -> Html {
         let element = element.clone();
         Callback::from(move |e: DragEvent| {
             if let Some(input) = e.data_transfer() {
-                debug!("Setting id: {}", id);
-                if let Err(e) = input.set_data("text/plain", &format!("{id}")) {
-                    debug!("Unable to set data: {:?}", e);
+                if let Err(e) = input.clear_data() {
+                    warn!("Unable to clear drag data: {:?}", e);
                 };
+                if let Err(e) = input.set_data("text/id", &format!("{id}")) {
+                    warn!("Unable to set drag data: {:?}", e);
+                };
+                input.set_effect_allowed("move");
+                input.set_drop_effect("move");
                 if let Some(el) = element.get() {
                     if let Some(par) = el.parent_element() {
                         input.set_drag_image(&par, 0, 0);
@@ -148,11 +157,15 @@ pub fn picture(props: &Props) -> Html {
 
     let on_drop = {
         let id = index;
+        let drag_over = drag_over.clone();
         Callback::from(move |e: DragEvent| {
-            debug!("Dropped on {}", id);
+            e.prevent_default();
+            drag_over.set(0);
             if let Some(input) = e.data_transfer() {
-                if let Ok(value) = input.get_data("text") {
-                    debug!("Dropped {} on {}", value, id);
+                if let Ok(value) = input.get_data("text/id") {
+                    if let Ok(int) = value.parse::<i32>() {
+                        debug!("Dropped {} on {}", int, id);
+                    };
                 }
             };
         })
@@ -160,9 +173,7 @@ pub fn picture(props: &Props) -> Html {
 
     let on_drag_end = {
         let being_dragged = being_dragged.clone();
-        let id = index;
         Callback::from(move |_e: DragEvent| {
-            debug!("Drag ended for {}", id);
             being_dragged.set(false);
         })
     };
@@ -178,7 +189,7 @@ pub fn picture(props: &Props) -> Html {
 
     let drag_over_class = if dragged {
         None
-    } else if *drag_over {
+    } else if (*drag_over) > 0 {
         Some("text-bg-secondary")
     } else {
         None
@@ -187,7 +198,8 @@ pub fn picture(props: &Props) -> Html {
     html!(
         <div class={classes!("mb-3", drag_class)}
                 ondrop={on_drop}
-                ondragover={on_drag_over}
+                ondragover={|e: DragEvent| e.prevent_default() }
+                ondragenter={on_drag_over}
                 ondragleave={on_drag_leave}>
             <div ref={element}
                 class={classes!("card", "w-100", drag_over_class)}
@@ -225,4 +237,22 @@ pub fn picture(props: &Props) -> Html {
             </div>
         </div>
     )
+}
+
+fn validate_list(list: web_sys::DataTransferItemList) -> Option<i32> {
+    if list.length() != 1 {
+        return None;
+    }
+
+    if let Some(item) = list.get(0) {
+        if item.kind().ne("string") {
+            return None;
+        };
+
+        if item.type_().ne("text/id") {
+            return None;
+        }
+    }
+
+    Some(1)
 }
