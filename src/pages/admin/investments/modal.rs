@@ -1,13 +1,9 @@
-use crate::components::table::types::{ColumnBuilder, Table, TableData};
-use crate::components::table::Options;
-use crate::pages::admin::investments::pictures::Pictures;
-use crate::pages::admin::investments::tag::Tag;
-use crate::types::WrapCallback;
-use gloo::file::File;
-use serde::Serialize;
-use serde_value::Value;
+use super::costs::{Costs, InvestmentCost};
+use super::pictures::Pictures;
+use super::tag::Tag;
 use std::collections::HashSet;
 use time::macros::format_description;
+use tracing::debug;
 use web_sys::{HtmlInputElement, MouseEvent};
 use yew::prelude::*;
 use yew::{html, Callback, Html};
@@ -17,28 +13,6 @@ use yew_hooks::UseCounterHandle;
 pub struct Props {
     pub close: Callback<MouseEvent>,
     pub counter: UseCounterHandle,
-}
-
-#[derive(Clone, Debug, PartialEq)]
-pub struct InvestmentCost {
-    pub name: String,
-    pub value: f64,
-}
-
-#[derive(Clone, Debug, PartialEq)]
-pub struct PictureInfo {
-    pub name: String,
-    pub mime: String,
-    pub picture: File,
-    pub data: Vec<u8>,
-    pub order: usize,
-}
-
-#[derive(Clone, Debug, PartialEq)]
-pub struct PictureNode {
-    pub name: String,
-    pub order: usize,
-    pub node: Html,
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -66,11 +40,6 @@ pub fn manage_investment(_props: &Props) -> Html {
         photos: vec![],
     });
 
-    let cost_info = use_state(|| InvestmentCost {
-        name: String::new(),
-        value: 0.0,
-    });
-
     let info = (*investment_info).clone();
     let format = format_description!("[year]-[month]-[day]");
 
@@ -83,47 +52,6 @@ pub fn manage_investment(_props: &Props) -> Html {
             investment_info.set(info);
         })
     };
-
-    let oninput_cost_name = {
-        let cost_info = cost_info.clone();
-        Callback::from(move |e: InputEvent| {
-            let input: HtmlInputElement = e.target_unchecked_into();
-            let mut info = (*cost_info).clone();
-            info.name = input.value();
-            cost_info.set(info);
-        })
-    };
-
-    let oninput_cost_value = {
-        let cost_info = cost_info.clone();
-        Callback::from(move |e: InputEvent| {
-            let input: HtmlInputElement = e.target_unchecked_into();
-            let mut info = (*cost_info).clone();
-            if let Ok(v) = input.value().parse::<f64>() {
-                info.value = v;
-            }
-            cost_info.set(info);
-        })
-    };
-
-    let add_cost = {
-        let cost_info = cost_info.clone();
-        let investment_info = investment_info.clone();
-        Callback::from(move |_| {
-            let mut info = (*cost_info).clone();
-            let mut invest_info = (*investment_info).clone();
-            invest_info.costs.retain(|c| c.name != info.name);
-            invest_info.costs.push(InvestmentCost {
-                name: info.name.clone(),
-                value: info.value,
-            });
-            info.name = String::new();
-            info.value = 0.0;
-            investment_info.set(invest_info);
-            cost_info.set(info);
-        })
-    };
-    let cost_value = format!("{}", cost_info.value);
 
     let oninput_description = {
         let investment_info = investment_info.clone();
@@ -190,11 +118,15 @@ pub fn manage_investment(_props: &Props) -> Html {
         })
     };
 
-    let remove_tag = {
+    let add_cost = {
         let investment_info = investment_info.clone();
-        Callback::from(move |name: String| {
+        Callback::from(move |data: (String, f64)| {
             let mut info = (*investment_info).clone();
-            info.tags.remove(&name);
+            info.costs.retain(|c| c.name != data.0);
+            info.costs.push(InvestmentCost {
+                name: data.0.clone(),
+                value: data.1,
+            });
             investment_info.set(info);
         })
     };
@@ -208,44 +140,30 @@ pub fn manage_investment(_props: &Props) -> Html {
         })
     };
 
-    let columns = vec![
-        ColumnBuilder::new("name")
-            .orderable(true)
-            .data_property("name")
-            .short_name("Cost Name")
-            .header_class("user-select-none")
-            .build(),
-        ColumnBuilder::new("value")
-            .orderable(true)
-            .short_name("Value")
-            .data_property("value")
-            .header_class("user-select-none")
-            .build(),
-        ColumnBuilder::new("Actions")
-            .data_property("actions")
-            .short_name("")
-            .header_class("user-select-none")
-            .build(),
-    ];
-    let mut data = Vec::new();
-    for cost in investment_info.costs.clone() {
-        data.push(CostLine {
-            name: cost.name.clone(),
-            value: cost.value,
-            remove: WrapCallback(Some(remove_cost.clone())),
-        });
-    }
-
-    let options = Options {
-        unordered_class: Some("fa-sort".to_string()),
-        ascending_class: Some("fa-sort-up".to_string()),
-        descending_class: Some("fa-sort-down".to_string()),
-        orderable_classes: vec!["mx-1".to_string(), "fa-solid".to_string()],
+    let remove_tag = {
+        let investment_info = investment_info.clone();
+        Callback::from(move |name: String| {
+            let mut info = (*investment_info).clone();
+            info.tags.remove(&name);
+            investment_info.set(info);
+        })
     };
+
+    let set_photos = {
+        let investment_info = investment_info.clone();
+        Callback::from(move |photos: Vec<String>| {
+            let mut info = (*investment_info).clone();
+            let mut p = photos.clone();
+            info.photos.clear();
+            info.photos.append(&mut p);
+            investment_info.set(info);
+        })
+    };
+
+    debug!("info: {:#?}", *investment_info);
 
     let mut sorted_tags = info.tags.iter().collect::<Vec<&String>>();
     sorted_tags.sort();
-    let key = data.len();
 
     html!(
         <>
@@ -338,71 +256,13 @@ pub fn manage_investment(_props: &Props) -> Html {
                             <label for="investmentvalueGroup">{"Investment Value"}</label>
                         </div>
                     </div>
-                    <div class="h7">
-                        {"Costs"}
-                    </div>
-                    <div class="input-group mb-2">
-                        <Table<CostLine> {options} classes={classes!("table", "table-hover")} columns={columns} data={data} orderable={true} key={key}/>
-                        <div class="input-group-text">
-                            <input
-                                type="text"
-                                placeholder="Cost Name"
-                                oninput={oninput_cost_name}
-                                value={cost_info.name.clone()}
-                                />
-                        </div>
-                        <input
-                            class="form-control"
-                            type="number"
-                            placeholder="0"
-                            oninput={oninput_cost_value}
-                            value={cost_value}
-                            />
-                        <button type="button" class="btn btn-success" onclick={add_cost}>{"+"}</button>
-                    </div>
+                    <Costs add={add_cost} remove={remove_cost}/>
                 </fieldset>
-                <Pictures />
+                <Pictures set={set_photos} />
             </div>
             <div class="modal-footer">
                 <button type="submit" class="btn btn-primary">{"Create"}</button>
             </div>
         </>
     )
-}
-
-#[derive(Default, Debug, Clone, PartialEq, PartialOrd, Serialize)]
-struct CostLine {
-    name: String,
-    value: f64,
-    remove: WrapCallback,
-}
-
-impl TableData for CostLine {
-    fn get_field_as_html(&self, field_name: &str) -> crate::components::table::error::Result<Html> {
-        let html = match field_name {
-            "name" => html!({ &self.name }),
-            "value" => html!({ format!("{:.2}", &self.value) }),
-            "actions" => html!(<button type="button" class="btn btn-danger">{"-"}</button>),
-            &_ => {
-                html!()
-            }
-        };
-        Ok(html)
-    }
-
-    fn get_field_as_value(
-        &self,
-        field_name: &str,
-    ) -> crate::components::table::error::Result<Value> {
-        let value = match field_name {
-            "name" => serde_value::to_value(&self.name),
-            "value" => serde_value::to_value(self.value),
-            &_ => serde_value::to_value(""),
-        };
-        Ok(value.unwrap())
-    }
-
-    fn matches_search(&self, _needle: Option<String>) -> bool {
-        true
-    }
 }

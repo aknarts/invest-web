@@ -13,21 +13,32 @@ pub struct PictureInfo {
     pub picture: File,
 }
 
+#[derive(Properties, PartialEq)]
+pub struct Props {
+    pub set: Callback<Vec<String>>,
+}
+
 #[function_component(Pictures)]
-pub fn pictures() -> Html {
+pub fn pictures(props: &Props) -> Html {
+    let set = props.set.clone();
+    let updates = use_counter(0);
     let pictures: UseStateHandle<Vec<Html>> = use_state(Vec::new);
+    let uploads: UseStateHandle<Vec<String>> = use_state(Vec::new);
     let drag_over = use_counter(0);
 
     let on_image_select = {
         let pictures = pictures.clone();
+        let updates = updates.clone();
         Callback::from(move |e: Event| {
             let input: HtmlInputElement = e.target_unchecked_into();
             process_pictures(&pictures, input.files());
+            updates.increase();
         })
     };
 
     let on_image_drop = {
         let pictures = pictures.clone();
+        let updates = updates.clone();
         let drag_over = drag_over.clone();
         Callback::from(move |e: DragEvent| {
             e.prevent_default();
@@ -37,6 +48,7 @@ pub fn pictures() -> Html {
                 if let Err(e) = input.clear_data() {
                     warn!("Unable to clear drag data: {:?}", e);
                 };
+                updates.increase();
             };
         })
     };
@@ -66,6 +78,11 @@ pub fn pictures() -> Html {
         })
     };
 
+    let on_upload = {
+        let uploads = uploads.clone();
+        Callback::from(move |path: String| {})
+    };
+
     let file_picker = use_node_ref();
     let f_picker = file_picker.clone();
     let click_add_image = Callback::from(move |_| {
@@ -80,6 +97,8 @@ pub fn pictures() -> Html {
     } else {
         Some("btn-outline-secondary")
     };
+
+    let key = *updates;
     html!(<>
             <div class="h5">
                 {"Pictures"}
@@ -91,7 +110,7 @@ pub fn pictures() -> Html {
                     ondragleave={on_drag_leave}
                     ondragenter={on_drag_enter}>{"Drag or Click"}</button>
             <input ref={file_picker} type="file" accept="image/jpeg" style="display:none;" onchange={on_image_select} multiple={true}/>
-            <div key={pics.len()}>
+            <div key={key}>
                 { for pics.iter().enumerate().map(|(i, n)| {
                         html!(
                             <ContextProvider<usize> context={i}>

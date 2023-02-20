@@ -1,3 +1,4 @@
+mod costs;
 mod list;
 mod modal;
 mod picture;
