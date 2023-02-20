@@ -64,6 +64,12 @@ pub struct Permission {
     pub description: String,
 }
 
+#[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, Default)]
+pub struct PictureUpload {
+    pub error: Option<String>,
+    pub path: Option<String>,
+}
+
 impl Ord for Permission {
     fn cmp(&self, other: &Self) -> Ordering {
         self.name.cmp(&other.name)
@@ -109,6 +115,6 @@ pub async fn get_investments_list() -> Result<Vec<Role>, Error> {
     request_get::<Vec<Role>>("/admin/roles".to_string()).await
 }
 
-pub async fn upload_picture(multipart: Form) -> Result<ApiResult, Error> {
-    request_post_multipart::<ApiResult>("/pictures".to_string(), multipart).await
+pub async fn upload_picture(multipart: Form) -> Result<PictureUpload, Error> {
+    request_post_multipart::<PictureUpload>("/pictures".to_string(), multipart).await
 }

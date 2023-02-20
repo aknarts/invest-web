@@ -10,14 +10,10 @@ pub struct PictureInfo {
     pub name: String,
     pub mime: String,
     pub picture: File,
-    pub bytes: Vec<u8>,
 }
 
-#[derive(Properties, PartialEq)]
-pub struct Props {}
-
 #[function_component(Pictures)]
-pub fn pictures(_props: &Props) -> Html {
+pub fn pictures() -> Html {
     let pictures: UseStateHandle<Vec<Html>> = use_state(Vec::new);
 
     let on_image_select = {
@@ -53,7 +49,7 @@ pub fn pictures(_props: &Props) -> Html {
                 {"Pictures"}
             </div>
 
-            <button type="button" class="btn btn-outline-secondary btn-lg px-5 py-5" style="width:100%" onclick={click_add_image}
+            <button type="button" class="btn btn-outline-secondary btn-lg p-5 mb-3 w-100" onclick={click_add_image}
                     ondrop={on_image_drop}
                     ondragover={Callback::from(|event: DragEvent| {
                         event.prevent_default();
@@ -63,7 +59,14 @@ pub fn pictures(_props: &Props) -> Html {
                     })}>{"Drag or Click"}</button>
             <input ref={file_picker} type="file" accept="image/jpeg" style="display:none;" onchange={on_image_select} multiple={true}/>
             <div key={pics.len()}>
-                { for pics.iter().cloned() }
+                { for pics.iter().enumerate().map(|(i, n)| {
+                        html!(
+                            <ContextProvider<usize> context={i}>
+                                { n.clone() }
+                            </ContextProvider<usize>>
+                        )
+                    })
+                }
             </div>
         </>
     )
@@ -80,7 +83,6 @@ fn process_pictures(pictures: &UseStateHandle<Vec<Html>>, input: Option<web_sys:
             name: name.clone(),
             mime: mime.clone(),
             picture: p.clone(),
-            bytes: vec![],
         };
         pict.push(html!(<Picture data={data.clone()}></Picture>));
     }
