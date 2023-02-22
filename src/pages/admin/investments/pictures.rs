@@ -1,5 +1,7 @@
 use super::picture::Picture;
 use gloo::file::File;
+use std::borrow::BorrowMut;
+use std::rc::Rc;
 use tracing::{debug, warn};
 use web_sys::HtmlInputElement;
 use yew::prelude::*;
@@ -13,6 +15,33 @@ pub struct PictureInfo {
     pub picture: File,
 }
 
+pub enum UploadAction {
+    Add(usize, String),
+}
+
+#[derive(Default, Debug)]
+pub struct UploadState {
+    paths: Vec<String>,
+}
+
+impl Reducible for UploadState {
+    type Action = UploadAction;
+
+    fn reduce(self: Rc<Self>, action: Self::Action) -> Rc<Self> {
+        let new = match action {
+            UploadAction::Add(index, path) => {
+                let mut next = self.paths.clone();
+                if index > next.len() {
+                    next.resize(index, String::new());
+                }
+                next.insert(index, path);
+                next
+            }
+        };
+        Self { paths: new }.into()
+    }
+}
+
 #[derive(Properties, PartialEq)]
 pub struct Props {
     pub set: Callback<Vec<String>>,
@@ -23,34 +52,58 @@ pub fn pictures(props: &Props) -> Html {
     let set = props.set.clone();
     let updates = use_counter(0);
     let pictures: UseStateHandle<Vec<Html>> = use_state(Vec::new);
-    let uploads: UseStateHandle<Vec<String>> = use_state(Vec::new);
+    let uploads = use_reducer(UploadState::default);
     let drag_over = use_counter(0);
+
+    // let on_upload = {
+    //     let uploads = uploads.clone();
+    //     use_callback(
+    //         move |data: (usize, String), uploads| {
+    //             let mut up = (**uploads).clone();
+    //             if data.0 > up.len() {
+    //                 up.resize(data.0, String::new());
+    //             }
+    //             up.insert(data.0, data.1);
+    //             (*uploads).set(up);
+    //         },
+    //         uploads,
+    //     )
+    // };
 
     let on_image_select = {
         let pictures = pictures.clone();
         let updates = updates.clone();
-        Callback::from(move |e: Event| {
-            let input: HtmlInputElement = e.target_unchecked_into();
-            process_pictures(&pictures, input.files());
-            updates.increase();
-        })
+        let uploads = uploads.dispatcher();
+
+        use_callback(
+            move |e: Event, uploads| {
+                let input: HtmlInputElement = e.target_unchecked_into();
+                process_pictures(&pictures, uploads, input.files());
+                updates.increase();
+            },
+            uploads,
+        )
     };
 
     let on_image_drop = {
         let pictures = pictures.clone();
         let updates = updates.clone();
         let drag_over = drag_over.clone();
-        Callback::from(move |e: DragEvent| {
-            e.prevent_default();
-            drag_over.set(0);
-            if let Some(input) = e.data_transfer() {
-                process_pictures(&pictures, input.files());
-                if let Err(e) = input.clear_data() {
-                    warn!("Unable to clear drag data: {:?}", e);
+        let uploads = uploads.dispatcher();
+        use_callback(
+            move |e: DragEvent, uploads| {
+                e.prevent_default();
+                drag_over.set(0);
+                if let Some(input) = e.data_transfer() {
+                    process_pictures(&pictures, uploads, input.files());
+                    if let Err(e) = input.clear_data() {
+                        warn!("Unable to clear drag data: {:?}", e);
+                    };
+                    updates.increase();
                 };
-                updates.increase();
-            };
-        })
+            },
+            uploads,
+        )
     };
 
     let on_drag_enter = {
@@ -78,10 +131,7 @@ pub fn pictures(props: &Props) -> Html {
         })
     };
 
-    let on_upload = {
-        let uploads = uploads.clone();
-        Callback::from(move |path: String| {})
-    };
+    debug!("Uploads: {:#?}", *uploads);
 
     let file_picker = use_node_ref();
     let f_picker = file_picker.clone();
@@ -124,7 +174,11 @@ pub fn pictures(props: &Props) -> Html {
     )
 }
 
-fn process_pictures(pictures: &UseStateHandle<Vec<Html>>, input: Option<web_sys::FileList>) {
+fn process_pictures(
+    pictures: &UseStateHandle<Vec<Html>>,
+    uploads: &UseReducerDispatcher<UploadState>,
+    input: Option<web_sys::FileList>,
+) {
     let pic = load_files(input);
     let mut pict = (**pictures).clone();
     for p in pic {
@@ -136,7 +190,10 @@ fn process_pictures(pictures: &UseStateHandle<Vec<Html>>, input: Option<web_sys:
             mime: mime.clone(),
             picture: p.clone(),
         };
-        pict.push(html!(<Picture data={data.clone()}></Picture>));
+        uploads.dispatch(UploadAction::Add(pict.len(), String::new()));
+        pict.push(
+            html!(<Picture uploads_dispatcher={uploads.clone()} data={data.clone()}></Picture>),
+        );
     }
     pictures.set(pict);
 }

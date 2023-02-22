@@ -7,10 +7,13 @@ use tracing::{debug, error, warn};
 use yew::prelude::*;
 use yew::{html, Html};
 use yew_hooks::{use_async, use_counter};
+use crate::pages::admin::investments::pictures::UploadAction;
+use super::pictures::UploadState;
 
 #[derive(Properties, PartialEq)]
 pub struct Props {
     pub data: PictureInfo,
+    pub uploads_dispatcher: UseReducerDispatcher<UploadState>,
 }
 
 #[function_component(Picture)]
@@ -18,6 +21,7 @@ pub fn picture(props: &Props) -> Html {
     let name = props.data.name.clone();
     let data = props.data.clone();
     let index = use_context::<usize>().unwrap();
+    let uploads_dispatcher = props.uploads_dispatcher.clone();
     let uploaded = use_state(|| false);
     let bytes = use_state(|| None::<Vec<u8>>);
     let reader = use_state(|| None);
@@ -58,6 +62,8 @@ pub fn picture(props: &Props) -> Html {
         let p = path.clone();
         let e = error.clone();
         let uploaded = uploaded.clone();
+        let uploads_dispatcher = uploads_dispatcher.clone();
+        let id = index;
         use_effect_with_deps(
             move |upload_images| {
                 upload_images.data.as_ref().map_or_else(
@@ -65,6 +71,9 @@ pub fn picture(props: &Props) -> Html {
                     |upload| {
                         e.set(upload.error.clone());
                         p.set(upload.path.clone());
+                        if let Some(path) = &upload.path {
+                            uploads_dispatcher.dispatch(UploadAction::Add(id, path.clone()));
+                        };
                         uploaded.set(true);
                     },
                 );
