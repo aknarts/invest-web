@@ -2,6 +2,7 @@ use super::costs::{Costs, InvestmentCost};
 use super::pictures::Pictures;
 use super::tag::Tag;
 use std::collections::HashSet;
+use std::rc::Rc;
 use time::macros::format_description;
 use tracing::debug;
 use web_sys::{HtmlInputElement, MouseEvent};
@@ -13,6 +14,19 @@ use yew_hooks::UseCounterHandle;
 pub struct Props {
     pub close: Callback<MouseEvent>,
     pub counter: UseCounterHandle,
+}
+
+pub enum InvestmentAction {
+    AddPhoto(usize, String),
+    SetName(String),
+    SetMaturity(time::Date),
+    SetExpiration(time::Date),
+    SetDescription(String),
+    AddTag(String),
+    RemoveTag(String),
+    SetValue(f64),
+    AddCost(String, f64),
+    RemoveCost(String),
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -27,136 +41,157 @@ pub struct InvestmentInfo {
     pub photos: Vec<String>,
 }
 
+impl Default for InvestmentInfo {
+    fn default() -> Self {
+        InvestmentInfo {
+            name: "".to_string(),
+            maturity: time::Date::MIN,
+            expiration: time::Date::MIN,
+            description: "".to_string(),
+            tags: HashSet::new(),
+            value: 0.0,
+            costs: vec![],
+            photos: vec![],
+        }
+    }
+}
+
+impl Reducible for InvestmentInfo {
+    type Action = InvestmentAction;
+
+    fn reduce(self: Rc<Self>, action: Self::Action) -> Rc<Self> {
+        let mut new = (*self).clone();
+        match action {
+            InvestmentAction::SetName(name) => {
+                new.name = name;
+            }
+            InvestmentAction::SetDescription(description) => {
+                new.description = description;
+            }
+            InvestmentAction::AddPhoto(index, path) => {
+                if index + 1 > new.photos.len() {
+                    new.photos.resize(index + 1, String::new());
+                }
+                new.photos[index] = path;
+            }
+            InvestmentAction::SetMaturity(date) => {
+                new.maturity = date;
+            }
+            InvestmentAction::SetExpiration(date) => {
+                new.expiration = date;
+            }
+            InvestmentAction::AddTag(tag) => {
+                new.tags.insert(tag.to_ascii_lowercase());
+            }
+            InvestmentAction::RemoveTag(tag) => {
+                new.tags.remove(&tag);
+            }
+            InvestmentAction::SetValue(value) => {
+                new.value = value;
+            }
+            InvestmentAction::AddCost(name, value) => {
+                new.costs.retain(|c| c.name != name);
+                new.costs.push(InvestmentCost {
+                    name: name.clone(),
+                    value,
+                });
+            }
+            InvestmentAction::RemoveCost(name) => {
+                new.costs.retain(|c| c.name != name);
+            }
+        };
+        new.into()
+    }
+}
+
 #[function_component(ManageInvestment)]
 pub fn manage_investment(_props: &Props) -> Html {
-    let investment_info = use_state(|| InvestmentInfo {
-        name: String::new(),
-        maturity: time::Date::MIN,
-        expiration: time::Date::MIN,
-        description: String::new(),
-        tags: HashSet::new(),
-        value: 0.0,
-        costs: vec![],
-        photos: vec![],
-    });
+    let investment_info = use_reducer(InvestmentInfo::default);
 
     let info = (*investment_info).clone();
     let format = format_description!("[year]-[month]-[day]");
 
     let oninput_name = {
-        let investment_info = investment_info.clone();
+        let investment_info = investment_info.dispatcher();
         Callback::from(move |e: InputEvent| {
             let input: HtmlInputElement = e.target_unchecked_into();
-            let mut info = (*investment_info).clone();
-            info.name = input.value();
-            investment_info.set(info);
+            investment_info.dispatch(InvestmentAction::SetName(input.value()));
         })
     };
 
     let oninput_description = {
-        let investment_info = investment_info.clone();
+        let investment_info = investment_info.dispatcher();
         Callback::from(move |e: InputEvent| {
             let input: HtmlInputElement = e.target_unchecked_into();
-            let mut info = (*investment_info).clone();
-            info.description = input.value();
-            investment_info.set(info);
+            investment_info.dispatch(InvestmentAction::SetDescription(input.value()));
         })
     };
 
     let oninput_value = {
-        let investment_info = investment_info.clone();
+        let investment_info = investment_info.dispatcher();
         Callback::from(move |e: InputEvent| {
             let input: HtmlInputElement = e.target_unchecked_into();
-            let mut info = (*investment_info).clone();
             if let Ok(v) = input.value().parse::<f64>() {
-                info.value = v;
+                investment_info.dispatch(InvestmentAction::SetValue(v));
             }
-            investment_info.set(info);
         })
     };
 
     let oninput_maturity = {
-        let investment_info = investment_info.clone();
+        let investment_info = investment_info.dispatcher();
         Callback::from(move |e: InputEvent| {
             let input: HtmlInputElement = e.target_unchecked_into();
-            let mut info = (*investment_info).clone();
             if let Ok(d) = time::Date::parse(&input.value(), &format) {
-                info.maturity = d;
+                investment_info.dispatch(InvestmentAction::SetMaturity(d));
             };
-            investment_info.set(info);
         })
     };
 
     let oninput_expiration = {
-        let investment_info = investment_info.clone();
+        let investment_info = investment_info.dispatcher();
         Callback::from(move |e: InputEvent| {
             let input: HtmlInputElement = e.target_unchecked_into();
-            let mut info = (*investment_info).clone();
             if let Ok(d) = time::Date::parse(&input.value(), &format) {
-                info.maturity = d;
+                investment_info.dispatch(InvestmentAction::SetExpiration(d));
             };
-            investment_info.set(info);
         })
     };
 
     let oninput_tags = {
-        let investment_info = investment_info.clone();
+        let investment_info = investment_info.dispatcher();
         Callback::from(move |e: InputEvent| {
             let input: HtmlInputElement = e.target_unchecked_into();
-            let mut info = (*investment_info).clone();
             let current: String = input.value();
             let mut tags = current.split(',').map(str::trim).peekable();
 
             while let Some(tag) = tags.next() {
                 if tags.peek().is_some() {
-                    info.tags.insert(tag.to_string().to_ascii_lowercase());
+                    investment_info.dispatch(InvestmentAction::AddTag(tag.to_string()));
                 } else {
                     input.set_value(tag);
                 }
             }
-            investment_info.set(info);
         })
     };
 
     let add_cost = {
-        let investment_info = investment_info.clone();
+        let investment_info = investment_info.dispatcher();
         Callback::from(move |data: (String, f64)| {
-            let mut info = (*investment_info).clone();
-            info.costs.retain(|c| c.name != data.0);
-            info.costs.push(InvestmentCost {
-                name: data.0.clone(),
-                value: data.1,
-            });
-            investment_info.set(info);
+            investment_info.dispatch(InvestmentAction::AddCost(data.0.clone(), data.1));
         })
     };
 
     let remove_cost = {
-        let investment_info = investment_info.clone();
+        let investment_info = investment_info.dispatcher();
         Callback::from(move |name: String| {
-            let mut info = (*investment_info).clone();
-            info.costs.retain(|c| c.name != name);
-            investment_info.set(info);
+            investment_info.dispatch(InvestmentAction::RemoveCost(name));
         })
     };
 
     let remove_tag = {
-        let investment_info = investment_info.clone();
+        let investment_info = investment_info.dispatcher();
         Callback::from(move |name: String| {
-            let mut info = (*investment_info).clone();
-            info.tags.remove(&name);
-            investment_info.set(info);
-        })
-    };
-
-    let set_photos = {
-        let investment_info = investment_info.clone();
-        Callback::from(move |photos: Vec<String>| {
-            let mut info = (*investment_info).clone();
-            let mut p = photos.clone();
-            info.photos.clear();
-            info.photos.append(&mut p);
-            investment_info.set(info);
+            investment_info.dispatch(InvestmentAction::RemoveTag(name));
         })
     };
 
@@ -258,7 +293,7 @@ pub fn manage_investment(_props: &Props) -> Html {
                     </div>
                     <Costs add={add_cost} remove={remove_cost}/>
                 </fieldset>
-                <Pictures set={set_photos} />
+                <Pictures dispatcher={investment_info.dispatcher()} />
             </div>
             <div class="modal-footer">
                 <button type="submit" class="btn btn-primary">{"Create"}</button>

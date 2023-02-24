@@ -56,7 +56,7 @@ pub fn costs(props: &Props) -> Html {
         let cost_info = cost_info.clone();
         let costs = costs.clone();
         let updates = updates.clone();
-        let add = add.clone();
+        let add = add;
         Callback::from(move |_e: MouseEvent| {
             let mut info = (*cost_info).clone();
             let mut costs_info = (*costs).clone();
@@ -79,7 +79,7 @@ pub fn costs(props: &Props) -> Html {
     let remove_cost = {
         let costs = costs.clone();
         let updates = updates.clone();
-        let remove = remove.clone();
+        let remove = remove;
         Callback::from(move |name: String| {
             let mut info = (*costs).clone();
             info.retain(|c| c.name != name);

@@ -7,13 +7,12 @@ use tracing::{debug, error, warn};
 use yew::prelude::*;
 use yew::{html, Html};
 use yew_hooks::{use_async, use_counter};
-use crate::pages::admin::investments::pictures::UploadAction;
-use super::pictures::UploadState;
+use crate::pages::admin::investments::modal::{InvestmentAction, InvestmentInfo};
 
 #[derive(Properties, PartialEq)]
 pub struct Props {
     pub data: PictureInfo,
-    pub uploads_dispatcher: UseReducerDispatcher<UploadState>,
+    pub uploads_dispatcher: UseReducerDispatcher<InvestmentInfo>,
 }
 
 #[function_component(Picture)]
@@ -62,7 +61,7 @@ pub fn picture(props: &Props) -> Html {
         let p = path.clone();
         let e = error.clone();
         let uploaded = uploaded.clone();
-        let uploads_dispatcher = uploads_dispatcher.clone();
+        let uploads_dispatcher = uploads_dispatcher;
         let id = index;
         use_effect_with_deps(
             move |upload_images| {
@@ -72,7 +71,7 @@ pub fn picture(props: &Props) -> Html {
                         e.set(upload.error.clone());
                         p.set(upload.path.clone());
                         if let Some(path) = &upload.path {
-                            uploads_dispatcher.dispatch(UploadAction::Add(id, path.clone()));
+                            uploads_dispatcher.dispatch(InvestmentAction::AddPhoto(id, path.clone()));
                         };
                         uploaded.set(true);
                     },

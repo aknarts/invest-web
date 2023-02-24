@@ -1,12 +1,11 @@
 use super::picture::Picture;
 use gloo::file::File;
-use std::borrow::BorrowMut;
-use std::rc::Rc;
 use tracing::{debug, warn};
 use web_sys::HtmlInputElement;
 use yew::prelude::*;
 use yew::{html, use_node_ref, use_state, Callback, Html, UseStateHandle};
 use yew_hooks::use_counter;
+use crate::pages::admin::investments::modal::InvestmentInfo;
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct PictureInfo {
@@ -15,65 +14,22 @@ pub struct PictureInfo {
     pub picture: File,
 }
 
-pub enum UploadAction {
-    Add(usize, String),
-}
-
-#[derive(Default, Debug)]
-pub struct UploadState {
-    paths: Vec<String>,
-}
-
-impl Reducible for UploadState {
-    type Action = UploadAction;
-
-    fn reduce(self: Rc<Self>, action: Self::Action) -> Rc<Self> {
-        let new = match action {
-            UploadAction::Add(index, path) => {
-                let mut next = self.paths.clone();
-                if index > next.len() {
-                    next.resize(index, String::new());
-                }
-                next.insert(index, path);
-                next
-            }
-        };
-        Self { paths: new }.into()
-    }
-}
-
 #[derive(Properties, PartialEq)]
 pub struct Props {
-    pub set: Callback<Vec<String>>,
+    pub dispatcher: UseReducerDispatcher<InvestmentInfo>,
 }
 
 #[function_component(Pictures)]
 pub fn pictures(props: &Props) -> Html {
-    let set = props.set.clone();
+    let dispatcher = props.dispatcher.clone();
     let updates = use_counter(0);
     let pictures: UseStateHandle<Vec<Html>> = use_state(Vec::new);
-    let uploads = use_reducer(UploadState::default);
     let drag_over = use_counter(0);
-
-    // let on_upload = {
-    //     let uploads = uploads.clone();
-    //     use_callback(
-    //         move |data: (usize, String), uploads| {
-    //             let mut up = (**uploads).clone();
-    //             if data.0 > up.len() {
-    //                 up.resize(data.0, String::new());
-    //             }
-    //             up.insert(data.0, data.1);
-    //             (*uploads).set(up);
-    //         },
-    //         uploads,
-    //     )
-    // };
 
     let on_image_select = {
         let pictures = pictures.clone();
         let updates = updates.clone();
-        let uploads = uploads.dispatcher();
+        let uploads = dispatcher.clone();
 
         use_callback(
             move |e: Event, uploads| {
@@ -89,7 +45,7 @@ pub fn pictures(props: &Props) -> Html {
         let pictures = pictures.clone();
         let updates = updates.clone();
         let drag_over = drag_over.clone();
-        let uploads = uploads.dispatcher();
+        let uploads = dispatcher;
         use_callback(
             move |e: DragEvent, uploads| {
                 e.prevent_default();
@@ -130,8 +86,6 @@ pub fn pictures(props: &Props) -> Html {
             };
         })
     };
-
-    debug!("Uploads: {:#?}", *uploads);
 
     let file_picker = use_node_ref();
     let f_picker = file_picker.clone();
@@ -176,7 +130,7 @@ pub fn pictures(props: &Props) -> Html {
 
 fn process_pictures(
     pictures: &UseStateHandle<Vec<Html>>,
-    uploads: &UseReducerDispatcher<UploadState>,
+    uploads: &UseReducerDispatcher<InvestmentInfo>,
     input: Option<web_sys::FileList>,
 ) {
     let pic = load_files(input);
@@ -190,7 +144,6 @@ fn process_pictures(
             mime: mime.clone(),
             picture: p.clone(),
         };
-        uploads.dispatch(UploadAction::Add(pict.len(), String::new()));
         pict.push(
             html!(<Picture uploads_dispatcher={uploads.clone()} data={data.clone()}></Picture>),
         );
