@@ -4,7 +4,7 @@ use gloo::file::File;
 use tracing::{debug, warn};
 use web_sys::HtmlInputElement;
 use yew::prelude::*;
-use yew::{html, use_node_ref, use_state, Callback, Html, UseStateHandle};
+use yew::{html, use_node_ref, Callback, Html};
 use yew_hooks::use_counter;
 use crate::pages::admin::investments::modal::InvestmentInfo;
 
@@ -30,7 +30,7 @@ impl Reducible for PicturesStruct {
     type Action = PicturesActions;
 
     fn reduce(self: Rc<Self>, action: Self::Action) -> Rc<Self> {
-        let mut new = (*self).nodes.clone();
+        let mut new = self.nodes.clone();
         match action {
             PicturesActions::Add(node) => {
                 new.push(node);
@@ -126,14 +126,14 @@ pub fn pictures(props: &Props) -> Html {
         };
     });
 
-    let pics = (*pictures).nodes.clone();
+    let pics = pictures.nodes.clone();
     let drag_over_class = if (*drag_over) > 0 {
         Some("btn-secondary")
     } else {
         Some("btn-outline-secondary")
     };
 
-    let key = *updates + (*pictures).counter;
+    let key = *updates + pictures.counter;
     html!(<>
             <div class="h5">
                 {"Pictures"}

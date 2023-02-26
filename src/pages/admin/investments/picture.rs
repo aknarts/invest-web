@@ -42,6 +42,7 @@ pub fn picture(props: &Props) -> Html {
                     return Err(error::Error::BadRequest);
                 }
                 Some(data) => {
+                    debug!("Starting image upload");
                     let multipart = reqwest::multipart::Form::new();
                     let mut file = reqwest::multipart::Part::bytes(data);
                     file = file.file_name(name.clone());
@@ -84,7 +85,8 @@ pub fn picture(props: &Props) -> Html {
         );
     }
 
-    if reader.is_none() {
+    if reader.is_none() && bytes.is_none() {
+        debug!("Starting image load: {:?}", *path);
         let task = {
             let bytes = bytes.clone();
             gloo::file::callbacks::read_as_bytes(&data.picture, move |res| match res {
@@ -169,7 +171,7 @@ pub fn picture(props: &Props) -> Html {
     let on_drop = {
         let id = index;
         let drag_over = drag_over.clone();
-        let pictures_dispatch = pictures_dispatcher.clone();
+        let pictures_dispatch = pictures_dispatcher;
         Callback::from(move |e: DragEvent| {
             e.prevent_default();
             drag_over.set(0);
