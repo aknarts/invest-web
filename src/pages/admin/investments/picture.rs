@@ -8,11 +8,13 @@ use yew::prelude::*;
 use yew::{html, Html};
 use yew_hooks::{use_async, use_counter};
 use crate::pages::admin::investments::modal::{InvestmentAction, InvestmentInfo};
+use crate::pages::admin::investments::pictures::{PicturesActions, PicturesStruct};
 
 #[derive(Properties, PartialEq)]
 pub struct Props {
     pub data: PictureInfo,
     pub uploads_dispatcher: UseReducerDispatcher<InvestmentInfo>,
+    pub pictures_dispatcher: UseReducerDispatcher<PicturesStruct>,
 }
 
 #[function_component(Picture)]
@@ -21,6 +23,7 @@ pub fn picture(props: &Props) -> Html {
     let data = props.data.clone();
     let index = use_context::<usize>().unwrap();
     let uploads_dispatcher = props.uploads_dispatcher.clone();
+    let pictures_dispatcher = props.pictures_dispatcher.clone();
     let uploaded = use_state(|| false);
     let bytes = use_state(|| None::<Vec<u8>>);
     let reader = use_state(|| None);
@@ -166,6 +169,7 @@ pub fn picture(props: &Props) -> Html {
     let on_drop = {
         let id = index;
         let drag_over = drag_over.clone();
+        let pictures_dispatch = pictures_dispatcher.clone();
         Callback::from(move |e: DragEvent| {
             e.prevent_default();
             drag_over.set(0);
@@ -173,6 +177,7 @@ pub fn picture(props: &Props) -> Html {
                 if let Ok(value) = input.get_data("text/id") {
                     if let Ok(int) = value.parse::<i32>() {
                         debug!("Dropped {} on {}", int, id);
+                        pictures_dispatch.dispatch(PicturesActions::Move(int as usize, id ));
                     };
                 }
             };

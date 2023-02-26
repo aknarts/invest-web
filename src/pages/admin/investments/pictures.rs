@@ -1,3 +1,4 @@
+use std::rc::Rc;
 use super::picture::Picture;
 use gloo::file::File;
 use tracing::{debug, warn};
@@ -14,6 +15,36 @@ pub struct PictureInfo {
     pub picture: File,
 }
 
+#[derive(Clone, Default, Debug, PartialEq)]
+pub struct PicturesStruct {
+    nodes: Vec<Html>,
+    counter: i32,
+}
+
+pub enum PicturesActions {
+    Add(Html),
+    Move(usize, usize),
+}
+
+impl Reducible for PicturesStruct {
+    type Action = PicturesActions;
+
+    fn reduce(self: Rc<Self>, action: Self::Action) -> Rc<Self> {
+        let mut new = (*self).nodes.clone();
+        match action {
+            PicturesActions::Add(node) => {
+                new.push(node);
+            }
+            PicturesActions::Move(from, to) => {
+                let temp = new.remove(from);
+                new.insert(to, temp);
+                debug!("Moving {from} to {to}");
+            }
+        };
+        Self { nodes: new, counter: self.counter + 1 }.into()
+    }
+}
+
 #[derive(Properties, PartialEq)]
 pub struct Props {
     pub dispatcher: UseReducerDispatcher<InvestmentInfo>,
@@ -23,11 +54,11 @@ pub struct Props {
 pub fn pictures(props: &Props) -> Html {
     let dispatcher = props.dispatcher.clone();
     let updates = use_counter(0);
-    let pictures: UseStateHandle<Vec<Html>> = use_state(Vec::new);
+    let pictures = use_reducer(PicturesStruct::default);
     let drag_over = use_counter(0);
 
     let on_image_select = {
-        let pictures = pictures.clone();
+        let pictures = pictures.dispatcher();
         let updates = updates.clone();
         let uploads = dispatcher.clone();
 
@@ -42,7 +73,7 @@ pub fn pictures(props: &Props) -> Html {
     };
 
     let on_image_drop = {
-        let pictures = pictures.clone();
+        let pictures = pictures.dispatcher();
         let updates = updates.clone();
         let drag_over = drag_over.clone();
         let uploads = dispatcher;
@@ -95,14 +126,14 @@ pub fn pictures(props: &Props) -> Html {
         };
     });
 
-    let pics = (*pictures).clone();
+    let pics = (*pictures).nodes.clone();
     let drag_over_class = if (*drag_over) > 0 {
         Some("btn-secondary")
     } else {
         Some("btn-outline-secondary")
     };
 
-    let key = *updates;
+    let key = *updates + (*pictures).counter;
     html!(<>
             <div class="h5">
                 {"Pictures"}
@@ -129,12 +160,11 @@ pub fn pictures(props: &Props) -> Html {
 }
 
 fn process_pictures(
-    pictures: &UseStateHandle<Vec<Html>>,
+    pictures: &UseReducerDispatcher<PicturesStruct>,
     uploads: &UseReducerDispatcher<InvestmentInfo>,
     input: Option<web_sys::FileList>,
 ) {
     let pic = load_files(input);
-    let mut pict = (**pictures).clone();
     for p in pic {
         let name = p.name().clone();
         debug!("Processing: {name}");
@@ -144,11 +174,8 @@ fn process_pictures(
             mime: mime.clone(),
             picture: p.clone(),
         };
-        pict.push(
-            html!(<Picture uploads_dispatcher={uploads.clone()} data={data.clone()}></Picture>),
-        );
+        pictures.dispatch(PicturesActions::Add(html!(<Picture pictures_dispatcher={pictures.clone()} uploads_dispatcher={uploads.clone()} data={data.clone()}></Picture>)));
     }
-    pictures.set(pict);
 }
 
 fn load_files(files: Option<web_sys::FileList>) -> Vec<File> {
