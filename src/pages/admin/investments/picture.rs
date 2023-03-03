@@ -1,18 +1,18 @@
-use super::pictures::PictureInfo;
-use crate::error;
+use crate::pages::admin::investments::modal::{InvestmentAction, InvestmentInfo};
+use crate::pages::admin::investments::pictures::{PictureData, PicturesActions, PicturesStruct};
 use crate::services::admin::upload_picture;
 use base64::engine::general_purpose;
 use base64::Engine;
 use tracing::{debug, error, warn};
+use uuid::Uuid;
+use yew::platform::spawn_local;
 use yew::prelude::*;
 use yew::{html, Html};
-use yew_hooks::{use_async, use_counter};
-use crate::pages::admin::investments::modal::{InvestmentAction, InvestmentInfo};
-use crate::pages::admin::investments::pictures::{PicturesActions, PicturesStruct};
+use yew_hooks::use_counter;
 
 #[derive(Properties, PartialEq)]
 pub struct Props {
-    pub data: PictureInfo,
+    pub data: PictureData,
     pub uploads_dispatcher: UseReducerDispatcher<InvestmentInfo>,
     pub pictures_dispatcher: UseReducerDispatcher<PicturesStruct>,
 }
@@ -21,27 +21,39 @@ pub struct Props {
 pub fn picture(props: &Props) -> Html {
     let name = props.data.name.clone();
     let data = props.data.clone();
+    let id = data.id;
     let index = use_context::<usize>().unwrap();
     let uploads_dispatcher = props.uploads_dispatcher.clone();
     let pictures_dispatcher = props.pictures_dispatcher.clone();
-    let uploaded = use_state(|| false);
-    let bytes = use_state(|| None::<Vec<u8>>);
-    let reader = use_state(|| None);
-    let path = use_state(|| None);
-    let error = use_state(|| None);
+    let bytes = data.bytes.clone();
+    let path = data.path.clone();
+    let id_state = use_state(Uuid::new_v4);
     let being_dragged = use_state(|| false);
     let drag_over = use_counter(0);
 
-    let upload_images = {
-        let b = (*bytes).clone();
+    let id_from_state = *id_state;
+    if id_from_state.ne(&id) {
+        if let Some(p) = &path {
+            uploads_dispatcher.dispatch(InvestmentAction::AddPhoto(index, p.clone()));
+        }
+
+        id_state.set(id);
+    };
+
+    if bytes.is_some() && data.path.is_none() && !props.data.started_upload {
+        let b = bytes.clone();
         let mime = data.mime.clone();
         let name = name.clone();
-        use_async(async move {
+        let id = data.id;
+        pictures_dispatcher.dispatch(PicturesActions::UploadStarted(id));
+        let photos_dispatcher = pictures_dispatcher.clone();
+        spawn_local(async move {
             let multipart = match b {
                 None => {
-                    return Err(error::Error::BadRequest);
+                    return;
                 }
                 Some(data) => {
+                    photos_dispatcher.dispatch(PicturesActions::Loaded(id, data.clone()));
                     debug!("Starting image upload");
                     let multipart = reqwest::multipart::Form::new();
                     let mut file = reqwest::multipart::Part::bytes(data);
@@ -49,7 +61,7 @@ pub fn picture(props: &Props) -> Html {
                     file = match file.mime_str(&mime) {
                         Err(e) => {
                             error!("Unable to set mime type: {e}");
-                            return Err(error::Error::BadRequest);
+                            return;
                         }
                         Ok(p) => p,
                     };
@@ -57,50 +69,16 @@ pub fn picture(props: &Props) -> Html {
                 }
             };
 
-            upload_picture(multipart).await
+            match upload_picture(multipart).await {
+                Ok(upload) => {
+                    if let Some(path) = &upload.path {
+                        photos_dispatcher.dispatch(PicturesActions::Uploaded(id, path.clone()));
+                    };
+                }
+                Err(_e) => {}
+            };
         })
     };
-
-    {
-        let p = path.clone();
-        let e = error.clone();
-        let uploaded = uploaded.clone();
-        let uploads_dispatcher = uploads_dispatcher;
-        let id = index;
-        use_effect_with_deps(
-            move |upload_images| {
-                upload_images.data.as_ref().map_or_else(
-                    || {},
-                    |upload| {
-                        e.set(upload.error.clone());
-                        p.set(upload.path.clone());
-                        if let Some(path) = &upload.path {
-                            uploads_dispatcher.dispatch(InvestmentAction::AddPhoto(id, path.clone()));
-                        };
-                        uploaded.set(true);
-                    },
-                );
-            },
-            upload_images.clone(),
-        );
-    }
-
-    if reader.is_none() && bytes.is_none() {
-        debug!("Starting image load: {:?}", *path);
-        let task = {
-            let bytes = bytes.clone();
-            gloo::file::callbacks::read_as_bytes(&data.picture, move |res| match res {
-                Ok(contents) => {
-                    bytes.set(Some(contents));
-                    upload_images.run();
-                }
-                Err(e) => {
-                    error!("Unable to read file: {:?}", e);
-                }
-            })
-        };
-        reader.set(Some(task));
-    }
 
     let on_drag_over = {
         let drag_over = drag_over.clone();
@@ -179,7 +157,7 @@ pub fn picture(props: &Props) -> Html {
                 if let Ok(value) = input.get_data("text/id") {
                     if let Ok(int) = value.parse::<i32>() {
                         debug!("Dropped {} on {}", int, id);
-                        pictures_dispatch.dispatch(PicturesActions::Move(int as usize, id ));
+                        pictures_dispatch.dispatch(PicturesActions::Move(int as usize, id));
                     };
                 }
             };
@@ -193,10 +171,10 @@ pub fn picture(props: &Props) -> Html {
         })
     };
 
-    let b = &(*bytes);
-    let p = (*path).clone();
-    let e = (*error).clone();
-    let u = *uploaded;
+    let b = &(bytes);
+    let p = path;
+
+    let u = p.is_some();
 
     let dragged = *being_dragged;
 
@@ -245,7 +223,6 @@ pub fn picture(props: &Props) -> Html {
                         <div class="card-body">
                             <h5 class="card-title">{name}<br /><small class="card-title text-muted">{data.mime}</small></h5>
                             { p.map(|path| { html!(<>{"url: "}{path}</>)}) }
-                            { e.map(|error| { html!(<>{"error: "}{error}</>)}) }
                         </div>
                     </div>
                 </div>

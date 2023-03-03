@@ -1,28 +1,36 @@
-use std::rc::Rc;
 use super::picture::Picture;
+use crate::pages::admin::investments::modal::InvestmentInfo;
+use gloo::file::callbacks::FileReader;
 use gloo::file::File;
-use tracing::{debug, warn};
+use std::rc::Rc;
+use tracing::{debug, error, warn};
+use uuid::Uuid;
 use web_sys::HtmlInputElement;
 use yew::prelude::*;
-use yew::{html, use_node_ref, Callback, Html};
+use yew::{html, use_mut_ref, use_node_ref, Callback, Html};
 use yew_hooks::use_counter;
-use crate::pages::admin::investments::modal::InvestmentInfo;
 
-#[derive(Clone, Debug, PartialEq)]
-pub struct PictureInfo {
+#[derive(Clone, Default, Debug, PartialEq)]
+pub struct PictureData {
+    pub id: Uuid,
     pub name: String,
     pub mime: String,
-    pub picture: File,
+    pub path: Option<String>,
+    pub bytes: Option<Vec<u8>>,
+    pub started_upload: bool,
 }
 
 #[derive(Clone, Default, Debug, PartialEq)]
 pub struct PicturesStruct {
-    nodes: Vec<Html>,
+    pictures: Vec<PictureData>,
     counter: i32,
 }
 
 pub enum PicturesActions {
-    Add(Html),
+    Add(Uuid, String, String),
+    UploadStarted(Uuid),
+    Uploaded(Uuid, String),
+    Loaded(Uuid, Vec<u8>),
     Move(usize, usize),
 }
 
@@ -30,18 +38,53 @@ impl Reducible for PicturesStruct {
     type Action = PicturesActions;
 
     fn reduce(self: Rc<Self>, action: Self::Action) -> Rc<Self> {
-        let mut new = self.nodes.clone();
+        let mut pictures = self.pictures.clone();
+        let mut counter = self.counter;
         match action {
-            PicturesActions::Add(node) => {
-                new.push(node);
+            PicturesActions::Add(id, name, mime) => {
+                pictures.push(PictureData {
+                    id,
+                    name,
+                    mime,
+                    path: None,
+                    bytes: None,
+                    started_upload: false,
+                });
+                counter += 1;
             }
             PicturesActions::Move(from, to) => {
-                let temp = new.remove(from);
-                new.insert(to, temp);
-                debug!("Moving {from} to {to}");
+                let temp = pictures.remove(from);
+                pictures.insert(to, temp);
+                counter += 1;
+            }
+            PicturesActions::Uploaded(id, path) => {
+                for picture in &mut pictures {
+                    if picture.id.eq(&id) {
+                        picture.path = Some(path);
+                        break;
+                    }
+                }
+                counter += 1;
+            }
+            PicturesActions::Loaded(id, data) => {
+                for mut picture in &mut pictures {
+                    if picture.id.eq(&id) {
+                        picture.bytes = Some(data);
+                        break;
+                    }
+                }
+                counter += 1;
+            }
+            PicturesActions::UploadStarted(id) => {
+                for mut picture in &mut pictures {
+                    if picture.id.eq(&id) {
+                        picture.started_upload = true;
+                        break;
+                    }
+                }
             }
         };
-        Self { nodes: new, counter: self.counter + 1 }.into()
+        Self { pictures, counter }.into()
     }
 }
 
@@ -56,41 +99,40 @@ pub fn pictures(props: &Props) -> Html {
     let updates = use_counter(0);
     let pictures = use_reducer(PicturesStruct::default);
     let drag_over = use_counter(0);
+    let readers = use_mut_ref(Vec::<FileReader>::new);
 
     let on_image_select = {
         let pictures = pictures.dispatcher();
         let updates = updates.clone();
-        let uploads = dispatcher.clone();
-
-        use_callback(
-            move |e: Event, uploads| {
-                let input: HtmlInputElement = e.target_unchecked_into();
-                process_pictures(&pictures, uploads, input.files());
-                updates.increase();
-            },
-            uploads,
-        )
+        let readers = readers.clone();
+        Callback::from(move |e: Event| {
+            let input: HtmlInputElement = e.target_unchecked_into();
+            let mut loaders = process_pictures(&pictures, input.files());
+            while let Some(loader) = loaders.pop() {
+                (*readers).borrow_mut().push(loader);
+            }
+            updates.increase();
+        })
     };
 
     let on_image_drop = {
         let pictures = pictures.dispatcher();
         let updates = updates.clone();
         let drag_over = drag_over.clone();
-        let uploads = dispatcher;
-        use_callback(
-            move |e: DragEvent, uploads| {
-                e.prevent_default();
-                drag_over.set(0);
-                if let Some(input) = e.data_transfer() {
-                    process_pictures(&pictures, uploads, input.files());
-                    if let Err(e) = input.clear_data() {
-                        warn!("Unable to clear drag data: {:?}", e);
-                    };
-                    updates.increase();
+        Callback::from(move |e: DragEvent| {
+            e.prevent_default();
+            drag_over.set(0);
+            if let Some(input) = e.data_transfer() {
+                let mut loaders = process_pictures(&pictures, input.files());
+                while let Some(loader) = loaders.pop() {
+                    (*readers).borrow_mut().push(loader);
+                }
+                if let Err(e) = input.clear_data() {
+                    warn!("Unable to clear drag data: {:?}", e);
                 };
-            },
-            uploads,
-        )
+                updates.increase();
+            };
+        })
     };
 
     let on_drag_enter = {
@@ -126,7 +168,7 @@ pub fn pictures(props: &Props) -> Html {
         };
     });
 
-    let pics = pictures.nodes.clone();
+    let pics = pictures.pictures.clone();
     let drag_over_class = if (*drag_over) > 0 {
         Some("btn-secondary")
     } else {
@@ -134,6 +176,8 @@ pub fn pictures(props: &Props) -> Html {
     };
 
     let key = *updates + pictures.counter;
+    let pictures_dispatcher = pictures.dispatcher();
+    let uploads_dispatcher = dispatcher;
     html!(<>
             <div class="h5">
                 {"Pictures"}
@@ -149,7 +193,7 @@ pub fn pictures(props: &Props) -> Html {
                 { for pics.iter().enumerate().map(|(i, n)| {
                         html!(
                             <ContextProvider<usize> context={i}>
-                                { n.clone() }
+                                <Picture pictures_dispatcher={pictures_dispatcher.clone()} uploads_dispatcher={uploads_dispatcher.clone()} data={n.clone()}></Picture>
                             </ContextProvider<usize>>
                         )
                     })
@@ -161,21 +205,36 @@ pub fn pictures(props: &Props) -> Html {
 
 fn process_pictures(
     pictures: &UseReducerDispatcher<PicturesStruct>,
-    uploads: &UseReducerDispatcher<InvestmentInfo>,
     input: Option<web_sys::FileList>,
-) {
+) -> Vec<FileReader> {
     let pic = load_files(input);
+    let mut readers = Vec::new();
     for p in pic {
         let name = p.name().clone();
         debug!("Processing: {name}");
         let mime = p.raw_mime_type().clone();
-        let data = PictureInfo {
-            name: name.clone(),
-            mime: mime.clone(),
-            picture: p.clone(),
-        };
-        pictures.dispatch(PicturesActions::Add(html!(<Picture pictures_dispatcher={pictures.clone()} uploads_dispatcher={uploads.clone()} data={data.clone()}></Picture>)));
+        let id = Uuid::new_v4();
+        pictures.dispatch(PicturesActions::Add(id, name.clone(), mime.clone()));
+        readers.push(load_picture(id, p.clone(), pictures));
     }
+    readers
+}
+
+fn load_picture(
+    id: Uuid,
+    picture: File,
+    pictures: &UseReducerDispatcher<PicturesStruct>,
+) -> FileReader {
+    let photos_dispatcher = pictures.clone();
+
+    gloo::file::callbacks::read_as_bytes(&picture, move |res| match res {
+        Ok(contents) => {
+            photos_dispatcher.dispatch(PicturesActions::Loaded(id, contents));
+        }
+        Err(e) => {
+            error!("Unable to read file: {:?}", e);
+        }
+    })
 }
 
 fn load_files(files: Option<web_sys::FileList>) -> Vec<File> {
