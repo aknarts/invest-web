@@ -42,3 +42,32 @@ pub enum Error {
     #[error("Http Request Error")]
     RequestError,
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn bad_request() {
+        let error = Error::BadRequest;
+        assert_eq!(format!("{error}"), "Bad Request")
+    }
+
+    #[test]
+    fn unauthorized() {
+        let error = Error::Unauthorized("Test".to_string());
+        assert_eq!(format!("{error}"), "Test")
+    }
+
+    #[test]
+    fn forbidden() {
+        let error = Error::Forbidden("Test".to_string());
+        assert_eq!(format!("{error}"), "Test")
+    }
+
+    #[test]
+    fn not_found() {
+        let error = Error::NotFound;
+        assert_eq!(format!("{error}"), "Not Found")
+    }
+}

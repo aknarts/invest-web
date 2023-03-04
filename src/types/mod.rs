@@ -7,9 +7,7 @@ use yew_hooks::UseCounterHandle;
 
 pub mod auth;
 
-/// Conduit api error info for Unprocessable Entity error
 #[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq)]
-#[serde(rename_all = "camelCase")]
 pub struct ErrorInfo {
     pub errors: HashMap<String, Vec<String>>,
 }
@@ -101,5 +99,64 @@ impl Ord for WrapCallback {
 impl PartialOrd for WrapCallback {
     fn partial_cmp(&self, _: &Self) -> Option<Ordering> {
         Some(Ordering::Equal)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn wrap_counter_debug() {
+        let wrap = WrapCounter(None);
+        assert_eq!(format!("{wrap:?}"), "No Counter")
+    }
+
+    #[test]
+    fn wrap_counter_eq() {
+        let wrap = WrapCounter(None);
+        let wrap2 = WrapCounter(None);
+        assert_eq!(wrap.eq(&wrap2), true)
+    }
+
+    #[test]
+    fn wrap_counter_cmp() {
+        let wrap = WrapCounter(None);
+        let wrap2 = WrapCounter(None);
+        assert_eq!(wrap.cmp(&wrap2), Ordering::Equal)
+    }
+
+    #[test]
+    fn wrap_counter_partial_cmp() {
+        let wrap = WrapCounter(None);
+        let wrap2 = WrapCounter(None);
+        assert_eq!(wrap.partial_cmp(&wrap2), Some(Ordering::Equal))
+    }
+
+    #[test]
+    fn wrap_callback_debug() {
+        let wrap = WrapCallback(None);
+        assert_eq!(format!("{wrap:?}"), "No callback")
+    }
+
+    #[test]
+    fn wrap_callback_eq() {
+        let wrap = WrapCallback(None);
+        let wrap2 = WrapCallback(None);
+        assert_eq!(wrap.eq(&wrap2), true)
+    }
+
+    #[test]
+    fn wrap_callback_cmp() {
+        let wrap = WrapCallback(None);
+        let wrap2 = WrapCallback(None);
+        assert_eq!(wrap.cmp(&wrap2), Ordering::Equal)
+    }
+
+    #[test]
+    fn wrap_callback_partial_cmp() {
+        let wrap = WrapCallback(None);
+        let wrap2 = WrapCallback(None);
+        assert_eq!(wrap.partial_cmp(&wrap2), Some(Ordering::Equal))
     }
 }
