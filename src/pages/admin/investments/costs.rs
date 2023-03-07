@@ -1,14 +1,7 @@
-use crate::components::table::types::{ColumnBuilder, Table, TableData};
-use crate::components::table::Options;
 use crate::pages::admin::investments::cost_line::CostLine;
 use crate::pages::admin::investments::modal::{InvestmentAction, InvestmentInfo};
-use crate::types::WrapCallback;
-use serde::Serialize;
-use serde_value::Value;
-use std::rc::Rc;
 use web_sys::HtmlInputElement;
 use yew::prelude::*;
-use yew_hooks::use_counter;
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct InvestmentCost {
@@ -25,7 +18,6 @@ pub struct Props {
 #[function_component(Costs)]
 pub fn costs(props: &Props) -> Html {
     let costs = props.costs.clone();
-    let updates = use_counter(0);
     let cost_info = use_state(|| InvestmentCost {
         name: String::new(),
         value: 0.0,
@@ -56,7 +48,6 @@ pub fn costs(props: &Props) -> Html {
     let add_cost = {
         let cost_info = cost_info.clone();
         let dispatcher = props.callback.clone();
-        let updates = updates.clone();
         Callback::from(move |_e: MouseEvent| {
             let mut info = (*cost_info).clone();
             dispatcher.dispatch(InvestmentAction::AddCost(info.name.clone(), info.value));

@@ -45,11 +45,11 @@ pub struct InvestmentInfo {
 
 impl Default for InvestmentInfo {
     fn default() -> Self {
-        InvestmentInfo {
-            name: "".to_string(),
+        Self {
+            name: String::new(),
             maturity: time::Date::MIN,
             expiration: time::Date::MIN,
-            description: "".to_string(),
+            description: String::new(),
             tags: HashSet::new(),
             value: 0.0,
             costs: vec![],
@@ -94,23 +94,14 @@ impl Reducible for InvestmentInfo {
                 new.value = value;
             }
             InvestmentAction::AddCost(name, value) => {
-                new.costs.push(InvestmentCost {
-                    name: name.clone(),
-                    value,
-                });
+                new.costs.push(InvestmentCost { name, value });
             }
             InvestmentAction::RemoveCost(index) => {
                 new.costs.remove(index);
             }
             InvestmentAction::EditCost(index, name, value) => {
                 new.costs.remove(index);
-                new.costs.insert(
-                    index,
-                    InvestmentCost {
-                        name: name.clone(),
-                        value,
-                    },
-                );
+                new.costs.insert(index, InvestmentCost { name, value });
             }
             InvestmentAction::MoveCost(from, to) => {
                 let temp = new.costs.remove(from);
@@ -174,18 +165,15 @@ pub fn manage_investment(_props: &Props) -> Html {
         })
     };
 
-    let remove_tag = {
-        let investment_info = investment_info.dispatcher();
-        Callback::from(move |name: String| {
-            investment_info.dispatch(InvestmentAction::RemoveTag(name));
-        })
-    };
-
     let dispatcher = investment_info.dispatcher();
 
     debug!("info: {:#?}", *investment_info);
 
-    let mut sorted_tags = info.tags.iter().map(|s| s.clone()).collect::<Vec<String>>();
+    let mut sorted_tags = info
+        .tags
+        .iter()
+        .map(std::clone::Clone::clone)
+        .collect::<Vec<String>>();
     sorted_tags.sort();
 
     html!(

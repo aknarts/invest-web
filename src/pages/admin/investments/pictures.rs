@@ -10,8 +10,8 @@ use yew::prelude::*;
 use yew::{html, use_mut_ref, use_node_ref, Callback, Html};
 use yew_hooks::use_counter;
 
-#[derive(Clone, Default, Debug, PartialEq)]
-pub struct PictureData {
+#[derive(Clone, Default, Debug, PartialEq, Eq)]
+pub struct Data {
     pub id: Uuid,
     pub name: String,
     pub mime: String,
@@ -20,13 +20,13 @@ pub struct PictureData {
     pub started_upload: bool,
 }
 
-#[derive(Clone, Default, Debug, PartialEq)]
-pub struct PicturesStruct {
-    pictures: Vec<PictureData>,
+#[derive(Clone, Default, Debug, PartialEq, Eq)]
+pub struct Reducer {
+    pictures: Vec<Data>,
     counter: i32,
 }
 
-pub enum PicturesActions {
+pub enum Actions {
     Add(Uuid, String, String),
     UploadStarted(Uuid),
     Uploaded(Uuid, String),
@@ -34,15 +34,15 @@ pub enum PicturesActions {
     Move(usize, usize),
 }
 
-impl Reducible for PicturesStruct {
-    type Action = PicturesActions;
+impl Reducible for Reducer {
+    type Action = Actions;
 
     fn reduce(self: Rc<Self>, action: Self::Action) -> Rc<Self> {
         let mut pictures = self.pictures.clone();
         let mut counter = self.counter;
         match action {
-            PicturesActions::Add(id, name, mime) => {
-                pictures.push(PictureData {
+            Actions::Add(id, name, mime) => {
+                pictures.push(Data {
                     id,
                     name,
                     mime,
@@ -52,12 +52,12 @@ impl Reducible for PicturesStruct {
                 });
                 counter += 1;
             }
-            PicturesActions::Move(from, to) => {
+            Actions::Move(from, to) => {
                 let temp = pictures.remove(from);
                 pictures.insert(to, temp);
                 counter += 1;
             }
-            PicturesActions::Uploaded(id, path) => {
+            Actions::Uploaded(id, path) => {
                 for picture in &mut pictures {
                     if picture.id.eq(&id) {
                         picture.path = Some(path);
@@ -66,7 +66,7 @@ impl Reducible for PicturesStruct {
                 }
                 counter += 1;
             }
-            PicturesActions::Loaded(id, data) => {
+            Actions::Loaded(id, data) => {
                 for mut picture in &mut pictures {
                     if picture.id.eq(&id) {
                         picture.bytes = Some(data);
@@ -75,7 +75,7 @@ impl Reducible for PicturesStruct {
                 }
                 counter += 1;
             }
-            PicturesActions::UploadStarted(id) => {
+            Actions::UploadStarted(id) => {
                 for mut picture in &mut pictures {
                     if picture.id.eq(&id) {
                         picture.started_upload = true;
@@ -97,7 +97,7 @@ pub struct Props {
 pub fn pictures(props: &Props) -> Html {
     let dispatcher = props.dispatcher.clone();
     let updates = use_counter(0);
-    let pictures = use_reducer(PicturesStruct::default);
+    let pictures = use_reducer(Reducer::default);
     let drag_over = use_counter(0);
     let readers = use_mut_ref(Vec::<FileReader>::new);
 
@@ -140,7 +140,7 @@ pub fn pictures(props: &Props) -> Html {
         Callback::from(move |e: DragEvent| {
             e.prevent_default();
             if let Some(input) = e.data_transfer() {
-                if validate_list(input.items()).is_none() {
+                if validate_list(&input.items()).is_none() {
                     return;
                 }
                 drag_over.increase();
@@ -152,7 +152,7 @@ pub fn pictures(props: &Props) -> Html {
         let drag_over = drag_over.clone();
         Callback::from(move |e: DragEvent| {
             if let Some(input) = e.data_transfer() {
-                if validate_list(input.items()).is_none() {
+                if validate_list(&input.items()).is_none() {
                     return;
                 }
                 drag_over.decrease();
@@ -204,7 +204,7 @@ pub fn pictures(props: &Props) -> Html {
 }
 
 fn process_pictures(
-    pictures: &UseReducerDispatcher<PicturesStruct>,
+    pictures: &UseReducerDispatcher<Reducer>,
     input: Option<web_sys::FileList>,
 ) -> Vec<FileReader> {
     let pic = load_files(input);
@@ -214,22 +214,18 @@ fn process_pictures(
         debug!("Processing: {name}");
         let mime = p.raw_mime_type().clone();
         let id = Uuid::new_v4();
-        pictures.dispatch(PicturesActions::Add(id, name.clone(), mime.clone()));
-        readers.push(load_picture(id, p.clone(), pictures));
+        pictures.dispatch(Actions::Add(id, name.clone(), mime.clone()));
+        readers.push(load_picture(id, &p, pictures));
     }
     readers
 }
 
-fn load_picture(
-    id: Uuid,
-    picture: File,
-    pictures: &UseReducerDispatcher<PicturesStruct>,
-) -> FileReader {
+fn load_picture(id: Uuid, picture: &File, pictures: &UseReducerDispatcher<Reducer>) -> FileReader {
     let photos_dispatcher = pictures.clone();
 
-    gloo::file::callbacks::read_as_bytes(&picture, move |res| match res {
+    gloo::file::callbacks::read_as_bytes(picture, move |res| match res {
         Ok(contents) => {
-            photos_dispatcher.dispatch(PicturesActions::Loaded(id, contents));
+            photos_dispatcher.dispatch(Actions::Loaded(id, contents));
         }
         Err(e) => {
             error!("Unable to read file: {:?}", e);
@@ -252,7 +248,7 @@ fn load_files(files: Option<web_sys::FileList>) -> Vec<File> {
     result
 }
 
-fn validate_list(list: web_sys::DataTransferItemList) -> Option<i32> {
+fn validate_list(list: &web_sys::DataTransferItemList) -> Option<i32> {
     if list.length() < 1 {
         debug!("Too little files");
         return None;

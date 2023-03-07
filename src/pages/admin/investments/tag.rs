@@ -13,7 +13,6 @@ pub fn tag(props: &Props) -> Html {
     let name = props.name.clone();
     let remove_tag = {
         let callback = props.callback.clone();
-        let name = name.clone();
         Callback::from(move |_| callback.dispatch(InvestmentAction::RemoveTag(name.clone())))
     };
     html!(<span class="badge rounded-pill bg-secondary align-middle">

@@ -1,5 +1,5 @@
 use crate::pages::admin::investments::modal::{InvestmentAction, InvestmentInfo};
-use crate::pages::admin::investments::pictures::{PictureData, PicturesActions, PicturesStruct};
+use crate::pages::admin::investments::pictures::{Actions, Data, Reducer};
 use crate::services::admin::upload_picture;
 use base64::engine::general_purpose;
 use base64::Engine;
@@ -12,9 +12,9 @@ use yew_hooks::use_counter;
 
 #[derive(Properties, PartialEq)]
 pub struct Props {
-    pub data: PictureData,
+    pub data: Data,
     pub uploads_dispatcher: UseReducerDispatcher<InvestmentInfo>,
-    pub pictures_dispatcher: UseReducerDispatcher<PicturesStruct>,
+    pub pictures_dispatcher: UseReducerDispatcher<Reducer>,
 }
 
 #[function_component(Picture)]
@@ -45,7 +45,7 @@ pub fn picture(props: &Props) -> Html {
         let mime = data.mime.clone();
         let name = name.clone();
         let id = data.id;
-        pictures_dispatcher.dispatch(PicturesActions::UploadStarted(id));
+        pictures_dispatcher.dispatch(Actions::UploadStarted(id));
         let photos_dispatcher = pictures_dispatcher.clone();
         spawn_local(async move {
             let multipart = match b {
@@ -53,7 +53,7 @@ pub fn picture(props: &Props) -> Html {
                     return;
                 }
                 Some(data) => {
-                    photos_dispatcher.dispatch(PicturesActions::Loaded(id, data.clone()));
+                    photos_dispatcher.dispatch(Actions::Loaded(id, data.clone()));
                     debug!("Starting image upload");
                     let multipart = reqwest::multipart::Form::new();
                     let mut file = reqwest::multipart::Part::bytes(data);
@@ -72,30 +72,22 @@ pub fn picture(props: &Props) -> Html {
             match upload_picture(multipart).await {
                 Ok(upload) => {
                     if let Some(path) = &upload.path {
-                        photos_dispatcher.dispatch(PicturesActions::Uploaded(id, path.clone()));
+                        photos_dispatcher.dispatch(Actions::Uploaded(id, path.clone()));
                     };
                 }
                 Err(_e) => {}
             };
-        })
+        });
     };
 
     let on_drag_over = {
         let drag_over = drag_over.clone();
         Callback::from(move |e: DragEvent| {
             if let Some(input) = e.data_transfer() {
-                if validate_list(input.items()).is_none() {
+                if validate_list(&input.items()).is_none() {
                     return;
                 }
-
-                match input.get_data("text/id") {
-                    Ok(_) => {
-                        drag_over.increase();
-                    }
-                    Err(e) => {
-                        warn!("unable to get data: {:?}", e);
-                    }
-                }
+                drag_over.increase();
             };
         })
     };
@@ -104,17 +96,10 @@ pub fn picture(props: &Props) -> Html {
         let drag_over = drag_over.clone();
         Callback::from(move |e: DragEvent| {
             if let Some(input) = e.data_transfer() {
-                if validate_list(input.items()).is_none() {
+                if validate_list(&input.items()).is_none() {
                     return;
                 }
-                match input.get_data("text/id") {
-                    Ok(_) => {
-                        drag_over.decrease();
-                    }
-                    Err(e) => {
-                        warn!("unable to get data: {:?}", e);
-                    }
-                }
+                drag_over.decrease();
             };
         })
     };
@@ -155,9 +140,9 @@ pub fn picture(props: &Props) -> Html {
             drag_over.set(0);
             if let Some(input) = e.data_transfer() {
                 if let Ok(value) = input.get_data("text/id") {
-                    if let Ok(int) = value.parse::<i32>() {
+                    if let Ok(int) = value.parse::<usize>() {
                         debug!("Dropped {} on {}", int, id);
-                        pictures_dispatch.dispatch(PicturesActions::Move(int as usize, id));
+                        pictures_dispatch.dispatch(Actions::Move(int, id));
                     };
                 }
             };
@@ -231,7 +216,7 @@ pub fn picture(props: &Props) -> Html {
     )
 }
 
-fn validate_list(list: web_sys::DataTransferItemList) -> Option<i32> {
+fn validate_list(list: &web_sys::DataTransferItemList) -> Option<i32> {
     if list.length() != 1 {
         return None;
     }

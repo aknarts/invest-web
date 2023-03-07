@@ -70,12 +70,11 @@ pub fn cost_line(props: &Props) -> Html {
             cost_info.set(InvestmentCost {
                 name: name.clone(),
                 value,
-            })
+            });
         })
     };
 
     let edit_cancel = {
-        let dispatcher = props.callback.clone();
         let editing = editing.clone();
         Callback::from(move |_e: MouseEvent| {
             editing.set(false);
@@ -88,7 +87,7 @@ pub fn cost_line(props: &Props) -> Html {
         let editing = editing.clone();
         Callback::from(move |_e: MouseEvent| {
             editing.set(false);
-            let mut info = (*cost_info).clone();
+            let info = (*cost_info).clone();
             dispatcher.dispatch(InvestmentAction::EditCost(
                 index,
                 info.name.clone(),
@@ -128,7 +127,7 @@ pub fn cost_line(props: &Props) -> Html {
         let drag_over = drag_over.clone();
         Callback::from(move |e: DragEvent| {
             if let Some(input) = e.data_transfer() {
-                if validate_list(input.items()).is_none() {
+                if validate_list(&input.items()).is_none() {
                     return;
                 }
                 drag_over.decrease();
@@ -140,7 +139,7 @@ pub fn cost_line(props: &Props) -> Html {
         let drag_over = drag_over.clone();
         Callback::from(move |e: DragEvent| {
             if let Some(input) = e.data_transfer() {
-                if validate_list(input.items()).is_none() {
+                if validate_list(&input.items()).is_none() {
                     return;
                 }
                 drag_over.increase();
@@ -239,7 +238,7 @@ pub fn cost_line(props: &Props) -> Html {
     )
 }
 
-fn validate_list(list: web_sys::DataTransferItemList) -> Option<i32> {
+fn validate_list(list: &web_sys::DataTransferItemList) -> Option<i32> {
     if list.length() != 1 {
         return None;
     }
