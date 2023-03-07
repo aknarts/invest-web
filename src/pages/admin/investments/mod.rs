@@ -5,6 +5,7 @@ mod modal;
 mod picture;
 pub mod pictures;
 mod tag;
+mod tags;
 
 use crate::pages::admin::investments::list::InvestmentsList;
 use yew::prelude::*;

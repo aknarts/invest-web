@@ -1,6 +1,6 @@
 use super::costs::{Costs, InvestmentCost};
 use super::pictures::Pictures;
-use super::tag::Tag;
+use super::tags::Tags;
 use std::collections::HashSet;
 use std::rc::Rc;
 use time::macros::format_description;
@@ -174,23 +174,6 @@ pub fn manage_investment(_props: &Props) -> Html {
         })
     };
 
-    let oninput_tags = {
-        let investment_info = investment_info.dispatcher();
-        Callback::from(move |e: InputEvent| {
-            let input: HtmlInputElement = e.target_unchecked_into();
-            let current: String = input.value();
-            let mut tags = current.split(',').map(str::trim).peekable();
-
-            while let Some(tag) = tags.next() {
-                if tags.peek().is_some() {
-                    investment_info.dispatch(InvestmentAction::AddTag(tag.to_string()));
-                } else {
-                    input.set_value(tag);
-                }
-            }
-        })
-    };
-
     let remove_tag = {
         let investment_info = investment_info.dispatcher();
         Callback::from(move |name: String| {
@@ -202,7 +185,7 @@ pub fn manage_investment(_props: &Props) -> Html {
 
     debug!("info: {:#?}", *investment_info);
 
-    let mut sorted_tags = info.tags.iter().collect::<Vec<&String>>();
+    let mut sorted_tags = info.tags.iter().map(|s| s.clone()).collect::<Vec<String>>();
     sorted_tags.sort();
 
     html!(
@@ -229,20 +212,7 @@ pub fn manage_investment(_props: &Props) -> Html {
                         </div>
                     </div>
                     <div class="input-group mb-2">
-                        <span class="input-group-text">
-                          <i class="fas fa-calendar-days"></i>
-                        </span>
-                        <div class="form-floating">
-                            <input
-                                class="form-control"
-                                type="date"
-                                id="investmentmaturityGroup"
-                                placeholder="Investment Maturity"
-                                oninput={oninput_maturity}
-                                />
-                            <label for="investmentmaturityGroup">{"Investment Maturity"}</label>
-                        </div>
-                        <span class="input-group-text">
+                        <span class="input-group-text" title={"When will the investment round end?"}>
                           <i class="fas fa-calendar-days"></i>
                         </span>
                         <div class="form-floating">
@@ -255,6 +225,19 @@ pub fn manage_investment(_props: &Props) -> Html {
                                 />
                             <label for="investmentexpirationGroup">{"Investment Expiration"}</label>
                         </div>
+                        <span class="input-group-text" title={"When will the investment be returned?"}>
+                          <i class="fas fa-calendar-days"></i>
+                        </span>
+                        <div class="form-floating">
+                            <input
+                                class="form-control"
+                                type="date"
+                                id="investmentmaturityGroup"
+                                placeholder="Investment Maturity"
+                                oninput={oninput_maturity}
+                                />
+                            <label for="investmentmaturityGroup">{"Investment Maturity"}</label>
+                        </div>
                     </div>
                     <div class="input-group mb-2">
                         <div class="form-floating">
@@ -263,19 +246,7 @@ pub fn manage_investment(_props: &Props) -> Html {
                           <label for="floatingTextarea2">{"Description"}</label>
                         </div>
                     </div>
-                    <div class="h7">
-                        {"Tags"}
-                    </div>
-                    <div class="container-fluid p-2">
-                        { for sorted_tags.iter().map(|t| html!(
-                            <Tag remove={&remove_tag} name={<&std::string::String>::clone(t).clone()}></Tag>
-                        ))}
-                    </div>
-                    <div class="input-group mb-3 input-group-sm">
-                        <span class="input-group-text">{"Add tag"}</span>
-                        <input type="text" class="form-control"
-                            oninput={oninput_tags}/>
-                    </div>
+                    <Tags callback={dispatcher.clone()} tags={sorted_tags.clone()} />
                 </fieldset>
                 <span class="h5">
                     {"Financials"}
