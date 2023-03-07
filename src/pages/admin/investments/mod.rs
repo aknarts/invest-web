@@ -1,3 +1,4 @@
+mod cost_line;
 mod costs;
 mod list;
 mod modal;

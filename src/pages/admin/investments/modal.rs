@@ -26,7 +26,9 @@ pub enum InvestmentAction {
     RemoveTag(String),
     SetValue(f64),
     AddCost(String, f64),
-    RemoveCost(String),
+    RemoveCost(usize),
+    EditCost(usize, String, f64),
+    MoveCost(usize, usize),
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -81,7 +83,9 @@ impl Reducible for InvestmentInfo {
                 new.expiration = date;
             }
             InvestmentAction::AddTag(tag) => {
-                new.tags.insert(tag.to_ascii_lowercase());
+                if !tag.is_empty() {
+                    new.tags.insert(tag.to_ascii_lowercase());
+                }
             }
             InvestmentAction::RemoveTag(tag) => {
                 new.tags.remove(&tag);
@@ -90,14 +94,27 @@ impl Reducible for InvestmentInfo {
                 new.value = value;
             }
             InvestmentAction::AddCost(name, value) => {
-                new.costs.retain(|c| c.name != name);
                 new.costs.push(InvestmentCost {
                     name: name.clone(),
                     value,
                 });
             }
-            InvestmentAction::RemoveCost(name) => {
-                new.costs.retain(|c| c.name != name);
+            InvestmentAction::RemoveCost(index) => {
+                new.costs.remove(index);
+            }
+            InvestmentAction::EditCost(index, name, value) => {
+                new.costs.remove(index);
+                new.costs.insert(
+                    index,
+                    InvestmentCost {
+                        name: name.clone(),
+                        value,
+                    },
+                );
+            }
+            InvestmentAction::MoveCost(from, to) => {
+                let temp = new.costs.remove(from);
+                new.costs.insert(to, temp);
             }
         };
         new.into()
@@ -174,26 +191,14 @@ pub fn manage_investment(_props: &Props) -> Html {
         })
     };
 
-    let add_cost = {
-        let investment_info = investment_info.dispatcher();
-        Callback::from(move |data: (String, f64)| {
-            investment_info.dispatch(InvestmentAction::AddCost(data.0.clone(), data.1));
-        })
-    };
-
-    let remove_cost = {
-        let investment_info = investment_info.dispatcher();
-        Callback::from(move |name: String| {
-            investment_info.dispatch(InvestmentAction::RemoveCost(name));
-        })
-    };
-
     let remove_tag = {
         let investment_info = investment_info.dispatcher();
         Callback::from(move |name: String| {
             investment_info.dispatch(InvestmentAction::RemoveTag(name));
         })
     };
+
+    let dispatcher = investment_info.dispatcher();
 
     debug!("info: {:#?}", *investment_info);
 
@@ -291,7 +296,7 @@ pub fn manage_investment(_props: &Props) -> Html {
                             <label for="investmentvalueGroup">{"Investment Value"}</label>
                         </div>
                     </div>
-                    <Costs add={add_cost} remove={remove_cost}/>
+                    <Costs costs={info.costs.clone()} callback={dispatcher}/>
                 </fieldset>
                 <Pictures dispatcher={investment_info.dispatcher()} />
             </div>
