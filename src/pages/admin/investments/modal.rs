@@ -1,6 +1,8 @@
 use super::costs::{Costs, InvestmentCost};
 use super::pictures::Pictures;
 use super::tags::Tags;
+use crate::services::admin::create_investment;
+use serde::Serialize;
 use std::collections::HashSet;
 use std::rc::Rc;
 use time::macros::format_description;
@@ -8,7 +10,7 @@ use tracing::debug;
 use web_sys::{HtmlInputElement, MouseEvent};
 use yew::prelude::*;
 use yew::{html, Callback, Html};
-use yew_hooks::UseCounterHandle;
+use yew_hooks::{use_async, UseCounterHandle};
 
 #[derive(Properties, PartialEq)]
 pub struct Props {
@@ -17,6 +19,7 @@ pub struct Props {
 }
 
 pub enum InvestmentAction {
+    Init,
     AddPhoto(usize, String),
     SetName(String),
     SetMaturity(time::Date),
@@ -31,7 +34,7 @@ pub enum InvestmentAction {
     MoveCost(usize, usize),
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, Serialize, PartialEq)]
 pub struct InvestmentInfo {
     pub name: String,
     pub maturity: time::Date,
@@ -64,6 +67,7 @@ impl Reducible for InvestmentInfo {
     fn reduce(self: Rc<Self>, action: Self::Action) -> Rc<Self> {
         let mut new = (*self).clone();
         match action {
+            InvestmentAction::Init => new = Self::default(),
             InvestmentAction::SetName(name) => {
                 new.name = name;
             }
@@ -113,11 +117,31 @@ impl Reducible for InvestmentInfo {
 }
 
 #[function_component(ManageInvestment)]
-pub fn manage_investment(_props: &Props) -> Html {
+pub fn manage_investment(props: &Props) -> Html {
     let investment_info = use_reducer(InvestmentInfo::default);
 
     let info = (*investment_info).clone();
     let format = format_description!("[year]-[month]-[day]");
+
+    let investment_create = {
+        let investment_info = investment_info.clone();
+        use_async(async move {
+            let request = (*investment_info).clone();
+            create_investment(request).await
+        })
+    };
+
+    let onsubmit = {
+        let investment = investment_info.dispatcher();
+        let close = props.close.clone();
+        let investment_create = investment_create;
+        Callback::from(move |e: SubmitEvent| {
+            e.prevent_default();
+            investment_create.run();
+            close.emit(MouseEvent::new("mousedown").unwrap());
+            investment.dispatch(InvestmentAction::Init);
+        })
+    };
 
     let oninput_name = {
         let investment_info = investment_info.dispatcher();
@@ -260,7 +284,9 @@ pub fn manage_investment(_props: &Props) -> Html {
                 <Pictures dispatcher={investment_info.dispatcher()} />
             </div>
             <div class="modal-footer">
-                <button type="submit" class="btn btn-primary">{"Create"}</button>
+                <form {onsubmit}>
+                    <button type="submit" class="btn btn-primary">{"Create"}</button>
+                </form>
             </div>
         </>
     )

@@ -1,7 +1,7 @@
 mod cost_line;
 mod costs;
 mod list;
-mod modal;
+pub mod modal;
 mod picture;
 pub mod pictures;
 mod tag;

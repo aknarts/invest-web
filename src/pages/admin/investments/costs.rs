@@ -1,9 +1,10 @@
 use crate::pages::admin::investments::cost_line::CostLine;
 use crate::pages::admin::investments::modal::{InvestmentAction, InvestmentInfo};
+use serde::Serialize;
 use web_sys::HtmlInputElement;
 use yew::prelude::*;
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, Serialize, PartialEq)]
 pub struct InvestmentCost {
     pub name: String,
     pub value: f64,

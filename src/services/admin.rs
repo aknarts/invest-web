@@ -1,4 +1,5 @@
 use crate::error::Error;
+use crate::pages::admin::investments::modal::InvestmentInfo;
 use crate::services::requests::{
     request_delete, request_get, request_post, request_post_multipart, request_put,
 };
@@ -117,4 +118,8 @@ pub async fn get_investments_list() -> Result<Vec<Role>, Error> {
 
 pub async fn upload_picture(multipart: Form) -> Result<PictureUpload, Error> {
     request_post_multipart::<PictureUpload>("/pictures".to_string(), multipart).await
+}
+
+pub async fn create_investment(new: InvestmentInfo) -> Result<ApiResult, Error> {
+    request_post::<InvestmentInfo, ApiResult>("/admin/investments".to_string(), new).await
 }

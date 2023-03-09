@@ -157,7 +157,8 @@ pub fn picture(props: &Props) -> Html {
     };
 
     let b = &(bytes);
-    let p = path;
+    let p = path.clone();
+    let thumb = path;
 
     let u = p.is_some();
 
@@ -192,7 +193,19 @@ pub fn picture(props: &Props) -> Html {
                                     </div>), |img| html!(
                             <div class="container card-img">
                                 <div class ="row position-relative">
-                                    <img class="col" src={format!("data:{};base64,{}",data.mime, general_purpose::STANDARD.encode(img))} style="max-width:100%; max-height:100%;"/>
+                                    <img class="col" src={ thumb.map_or_else(
+                                            || {
+                                                format!(
+                                                    "data:{};base64,{}",
+                                                    data.mime,
+                                                    general_purpose::STANDARD.encode(img)
+                                                )
+                                            },
+                                            |p| {
+                                                format!("http://127.0.0.1:8081/{}", p.replace(".jpg", "_thumb.jpg"))
+
+                                            },
+                                        ) } style="max-width:100%; max-height:100%;"/>
                                     if !u {
                                         <div class="col position-absolute translate-middle top-50 start-50 spinner-border m-auto" role="status">
                                             <span class="sr-only">{"Loading..."}</span>
