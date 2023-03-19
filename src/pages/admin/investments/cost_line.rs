@@ -199,7 +199,7 @@ pub fn cost_line(props: &Props) -> Html {
             ondragleave={on_drag_leave}
             class={classes!(drag_over_class, drag_class)}
             draggable={format!("{}", !edit)}>
-            <td scope="row">
+            <td>
                 if edit {
                     <input
                         class="form-control"

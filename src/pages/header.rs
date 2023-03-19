@@ -48,7 +48,7 @@ pub fn header() -> Html {
 
     html!(
         <>
-            <nav class="navbar navbar-expand-lg sticky-top shadow bg-light" role="navigation" aria-label="main navigation">
+            <nav class="navbar navbar-expand-lg sticky-top shadow bg-light" aria-label="main navigation">
                 <div class="container-fluid">
                     <Link<Route> to={Route::Home} classes="navbar-brand fs-2">
                         { "Invest Web" }

@@ -28,6 +28,7 @@ pub enum InvestmentAction {
     AddTag(String),
     RemoveTag(String),
     SetValue(f64),
+    SetEarning(f64),
     AddCost(String, f64),
     RemoveCost(usize),
     EditCost(usize, String, f64),
@@ -42,6 +43,7 @@ pub struct InvestmentInfo {
     pub description: String,
     pub tags: HashSet<String>,
     pub value: f64,
+    pub earning: f64,
     pub costs: Vec<InvestmentCost>,
     pub photos: Vec<String>,
 }
@@ -55,6 +57,7 @@ impl Default for InvestmentInfo {
             description: String::new(),
             tags: HashSet::new(),
             value: 0.0,
+            earning: 0.0,
             costs: vec![],
             photos: vec![],
         }
@@ -96,6 +99,9 @@ impl Reducible for InvestmentInfo {
             }
             InvestmentAction::SetValue(value) => {
                 new.value = value;
+            }
+            InvestmentAction::SetEarning(value) => {
+                new.earning = value;
             }
             InvestmentAction::AddCost(name, value) => {
                 new.costs.push(InvestmentCost { name, value });
@@ -169,6 +175,16 @@ pub fn manage_investment(props: &Props) -> Html {
         })
     };
 
+    let oninput_earnings = {
+        let investment_info = investment_info.dispatcher();
+        Callback::from(move |e: InputEvent| {
+            let input: HtmlInputElement = e.target_unchecked_into();
+            if let Ok(v) = input.value().parse::<f64>() {
+                investment_info.dispatch(InvestmentAction::SetEarning(v));
+            }
+        })
+    };
+
     let oninput_maturity = {
         let investment_info = investment_info.dispatcher();
         Callback::from(move |e: InputEvent| {
@@ -200,13 +216,32 @@ pub fn manage_investment(props: &Props) -> Html {
         .collect::<Vec<String>>();
     sorted_tags.sort();
 
+    let data = (*investment_info).clone();
+    let value = format!("{}", data.value);
+    let earning = format!("{}", data.earning);
+    let rate = (data.earning * 12.0) / data.value;
+    let paearning = if value.eq("0") || earning.eq("0") {
+        format!("0")
+    } else {
+        format!("{:.1}", (rate * 100.0))
+    };
+    let total_earnings =
+        if data.maturity.eq(&time::Date::MIN) || data.expiration.eq(&time::Date::MIN) {
+            None
+        } else {
+            Some(format!(
+                "{:.1}",
+                (rate * (data.maturity - data.expiration).whole_days() as f64 / 365.0) * 100.0
+            ))
+        };
+
     html!(
         <>
             <div class="modal-body">
                 <span class="h5">
                     {"General"}
                 </span>
-                <fieldset>
+                <div class="border-bottom">
                     <div class="input-group mb-2">
                         <span class="input-group-text">
                           <i class="fas fa-signature"></i>
@@ -232,7 +267,6 @@ pub fn manage_investment(props: &Props) -> Html {
                                 class="form-control"
                                 type="date"
                                 id="investmentexpirationGroup"
-                                placeholder="Investment Expiration"
                                 oninput={oninput_expiration}
                                 />
                             <label for="investmentexpirationGroup">{"Investment Expiration"}</label>
@@ -245,7 +279,6 @@ pub fn manage_investment(props: &Props) -> Html {
                                 class="form-control"
                                 type="date"
                                 id="investmentmaturityGroup"
-                                placeholder="Investment Maturity"
                                 oninput={oninput_maturity}
                                 />
                             <label for="investmentmaturityGroup">{"Investment Maturity"}</label>
@@ -258,29 +291,70 @@ pub fn manage_investment(props: &Props) -> Html {
                           <label for="floatingTextarea2">{"Description"}</label>
                         </div>
                     </div>
+                </div>
+                <div class="border-bottom">
                     <Tags callback={dispatcher.clone()} tags={sorted_tags.clone()} />
-                </fieldset>
-                <span class="h5">
-                    {"Financials"}
-                </span>
-                <fieldset>
-                    <div class="input-group mb-2">
-                        <span class="input-group-text">
-                          <i class="fas fa-coins"></i>
-                        </span>
-                        <div class="form-floating">
-                            <input
-                                class="form-control"
-                                type="number"
-                                id="investmentvalueGroup"
-                                placeholder="0"
-                                oninput={oninput_value}
-                                />
-                            <label for="investmentvalueGroup">{"Investment Value"}</label>
+                </div>
+                <div class="border-bottom">
+                    <span class="h5">
+                        {"Financials"}
+                    </span>
+                    <div class="container">
+                        <div class="row">
+                            <div class="col">
+                                <div class="input-group mb-2">
+                                    <span class="input-group-text">
+                                      <i class="fa-solid fa-house-chimney-medical" />
+                                    </span>
+                                    <div class="form-floating">
+                                        <input
+                                            class="form-control"
+                                            type="number"
+                                            id="investmentvalueGroup"
+                                            placeholder="0"
+                                            oninput={oninput_value}
+                                            value={value}
+                                            />
+                                        <label for="investmentvalueGroup">{"Investment Value"}</label>
+                                    </div>
+                                </div>
+                                <div class="input-group mb-2">
+                                    <span class="input-group-text">
+                                      <i class="fa-solid fa-piggy-bank" />
+                                    </span>
+                                    <div class="form-floating">
+                                        <input
+                                            class="form-control"
+                                            type="number"
+                                            id="investmentearningGroup"
+                                            placeholder="0"
+                                            oninput={oninput_earnings}
+                                            value={earning}
+                                            />
+                                        <label for="investmentearningGroup">{"Investment Earnings"}</label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-auto text-center d-flex border">
+                                <div class="align-self-center">
+                                    <div>
+                                        <span class="h1">{paearning}</span>
+                                        <span class="h3">{"%"}</span>
+                                        <span class="h5">{" pa"}</span>
+                                    </div>
+                                    { total_earnings.map(|total| html!(<div>
+                                        <span class="h6">{total}{"% total"}</span>
+                                    </div>))
+                                    }
+
+                                </div>
+                            </div>
                         </div>
                     </div>
+                </div>
+                <div class="border-bottom">
                     <Costs costs={info.costs.clone()} callback={dispatcher}/>
-                </fieldset>
+                </div>
                 <Pictures dispatcher={investment_info.dispatcher()} />
             </div>
             <div class="modal-footer">

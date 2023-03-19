@@ -85,7 +85,7 @@ pub fn costs(props: &Props) -> Html {
                 </tbody>
                 <tfoot>
                     <tr>
-                        <td scope="row">
+                        <td>
                             <input
                                 class="form-control"
                                 type="text"

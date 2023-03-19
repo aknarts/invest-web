@@ -38,7 +38,7 @@ pub fn modal(props: &Prop) -> Html {
         (None, "display: none;")
     };
     let title = Html::from_html_unchecked(AttrValue::from(format!(
-        "<h1 class=\"modal-title fs-5\" id=\"exampleModalLabel\">{}</h1>",
+        "<h1 class=\"modal-title fs-5\">{}</h1>",
         props.title.clone()
     )));
 
