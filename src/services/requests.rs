@@ -7,7 +7,7 @@ use parking_lot::RwLock;
 use serde::{de::DeserializeOwned, Serialize};
 use tracing::debug;
 
-const API_ROOT: &str = "http://localhost:8081/";
+pub const API_ROOT: &str = "http://localhost:8081/";
 const TOKEN_KEY: &str = "invest.token";
 
 lazy_static! {

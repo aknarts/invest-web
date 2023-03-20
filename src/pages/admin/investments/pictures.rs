@@ -15,6 +15,7 @@ pub struct Data {
     pub id: Uuid,
     pub name: String,
     pub mime: String,
+    pub description: String,
     pub path: Option<String>,
     pub bytes: Option<Vec<u8>>,
     pub started_upload: bool,
@@ -28,6 +29,7 @@ pub struct Reducer {
 
 pub enum Actions {
     Add(Uuid, String, String),
+    AddDescription(Uuid, String),
     UploadStarted(Uuid),
     Uploaded(Uuid, String),
     Loaded(Uuid, Vec<u8>),
@@ -46,6 +48,7 @@ impl Reducible for Reducer {
                     id,
                     name,
                     mime,
+                    description: String::new(),
                     path: None,
                     bytes: None,
                     started_upload: false,
@@ -79,6 +82,14 @@ impl Reducible for Reducer {
                 for mut picture in &mut pictures {
                     if picture.id.eq(&id) {
                         picture.started_upload = true;
+                        break;
+                    }
+                }
+            }
+            Actions::AddDescription(id, description) => {
+                for mut picture in &mut pictures {
+                    if picture.id.eq(&id) {
+                        picture.description = description;
                         break;
                     }
                 }

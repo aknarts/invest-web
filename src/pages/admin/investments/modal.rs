@@ -20,10 +20,10 @@ pub struct Props {
 
 pub enum InvestmentAction {
     Init,
-    AddPhoto(usize, String),
+    AddPhoto(usize, String, String),
     SetName(String),
-    SetMaturity(time::Date),
-    SetExpiration(time::Date),
+    SetMaturity(Option<time::Date>),
+    SetExpiration(Option<time::Date>),
     SetDescription(String),
     AddTag(String),
     RemoveTag(String),
@@ -38,22 +38,22 @@ pub enum InvestmentAction {
 #[derive(Clone, Debug, Serialize, PartialEq)]
 pub struct InvestmentInfo {
     pub name: String,
-    pub maturity: time::Date,
-    pub expiration: time::Date,
+    pub maturity: Option<time::Date>,
+    pub expiration: Option<time::Date>,
     pub description: String,
     pub tags: HashSet<String>,
     pub value: f64,
     pub earning: f64,
     pub costs: Vec<InvestmentCost>,
-    pub photos: Vec<String>,
+    pub photos: Vec<(String, String)>,
 }
 
 impl Default for InvestmentInfo {
     fn default() -> Self {
         Self {
             name: String::new(),
-            maturity: time::Date::MIN,
-            expiration: time::Date::MIN,
+            maturity: None,
+            expiration: None,
             description: String::new(),
             tags: HashSet::new(),
             value: 0.0,
@@ -77,11 +77,11 @@ impl Reducible for InvestmentInfo {
             InvestmentAction::SetDescription(description) => {
                 new.description = description;
             }
-            InvestmentAction::AddPhoto(index, path) => {
+            InvestmentAction::AddPhoto(index, path, desc) => {
                 if index + 1 > new.photos.len() {
-                    new.photos.resize(index + 1, String::new());
+                    new.photos.resize(index + 1, (String::new(), String::new()));
                 }
-                new.photos[index] = path;
+                new.photos[index] = (path, desc);
             }
             InvestmentAction::SetMaturity(date) => {
                 new.maturity = date;
@@ -190,7 +190,7 @@ pub fn manage_investment(props: &Props) -> Html {
         Callback::from(move |e: InputEvent| {
             let input: HtmlInputElement = e.target_unchecked_into();
             if let Ok(d) = time::Date::parse(&input.value(), &format) {
-                investment_info.dispatch(InvestmentAction::SetMaturity(d));
+                investment_info.dispatch(InvestmentAction::SetMaturity(Some(d)));
             };
         })
     };
@@ -200,7 +200,7 @@ pub fn manage_investment(props: &Props) -> Html {
         Callback::from(move |e: InputEvent| {
             let input: HtmlInputElement = e.target_unchecked_into();
             if let Ok(d) = time::Date::parse(&input.value(), &format) {
-                investment_info.dispatch(InvestmentAction::SetExpiration(d));
+                investment_info.dispatch(InvestmentAction::SetExpiration(Some(d)));
             };
         })
     };
@@ -221,19 +221,24 @@ pub fn manage_investment(props: &Props) -> Html {
     let earning = format!("{}", data.earning);
     let rate = (data.earning * 12.0) / data.value;
     let paearning = if value.eq("0") || earning.eq("0") {
-        format!("0")
+        "0".to_string()
     } else {
         format!("{:.1}", (rate * 100.0))
     };
-    let total_earnings =
-        if data.maturity.eq(&time::Date::MIN) || data.expiration.eq(&time::Date::MIN) {
-            None
-        } else {
-            Some(format!(
-                "{:.1}",
-                (rate * (data.maturity - data.expiration).whole_days() as f64 / 365.0) * 100.0
-            ))
-        };
+    let total_earnings = if data.maturity.is_none() || data.expiration.is_none() {
+        None
+    } else {
+        #[allow(clippy::cast_precision_loss)]
+        Some(format!(
+            "{:.1}",
+            (rate * (data.maturity.unwrap() - data.expiration.unwrap()).whole_days() as f64
+                / 365.0)
+                * 100.0
+        ))
+    };
+
+    let exp = data.expiration.map(|d| d.to_string());
+    let mat = data.maturity.map(|d| d.to_string());
 
     html!(
         <>
@@ -267,6 +272,7 @@ pub fn manage_investment(props: &Props) -> Html {
                                 class="form-control"
                                 type="date"
                                 id="investmentexpirationGroup"
+                                value={exp}
                                 oninput={oninput_expiration}
                                 />
                             <label for="investmentexpirationGroup">{"Investment Expiration"}</label>
@@ -279,6 +285,7 @@ pub fn manage_investment(props: &Props) -> Html {
                                 class="form-control"
                                 type="date"
                                 id="investmentmaturityGroup"
+                                value={mat}
                                 oninput={oninput_maturity}
                                 />
                             <label for="investmentmaturityGroup">{"Investment Maturity"}</label>
@@ -286,8 +293,8 @@ pub fn manage_investment(props: &Props) -> Html {
                     </div>
                     <div class="input-group mb-2">
                         <div class="form-floating">
-                          <textarea class="form-control" placeholder="Leave a comment here" id="floatingTextarea2" style="height: 100px"
-                                oninput={oninput_description}>{info.description.clone()}</textarea>
+                          <textarea class="form-control" id="floatingTextarea2" style="height: 100px"
+                                oninput={oninput_description} value={info.description.clone()}></textarea>
                           <label for="floatingTextarea2">{"Description"}</label>
                         </div>
                     </div>

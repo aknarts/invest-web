@@ -1,10 +1,12 @@
 use crate::pages::admin::investments::modal::{InvestmentAction, InvestmentInfo};
 use crate::pages::admin::investments::pictures::{Actions, Data, Reducer};
 use crate::services::admin::upload_picture;
+use crate::services::requests::API_ROOT;
 use base64::engine::general_purpose;
 use base64::Engine;
 use tracing::{debug, error, warn};
 use uuid::Uuid;
+use web_sys::HtmlInputElement;
 use yew::platform::spawn_local;
 use yew::prelude::*;
 use yew::{html, Html};
@@ -19,8 +21,8 @@ pub struct Props {
 
 #[function_component(Picture)]
 pub fn picture(props: &Props) -> Html {
-    let name = props.data.name.clone();
     let data = props.data.clone();
+    let name = data.name.clone();
     let id = data.id;
     let index = use_context::<usize>().unwrap();
     let uploads_dispatcher = props.uploads_dispatcher.clone();
@@ -29,15 +31,35 @@ pub fn picture(props: &Props) -> Html {
     let path = data.path.clone();
     let id_state = use_state(Uuid::new_v4);
     let being_dragged = use_state(|| false);
+    let description = data.description.clone();
     let drag_over = use_counter(0);
+    debug!("Description: {description}");
 
     let id_from_state = *id_state;
     if id_from_state.ne(&id) {
         if let Some(p) = &path {
-            uploads_dispatcher.dispatch(InvestmentAction::AddPhoto(index, p.clone()));
+            uploads_dispatcher.dispatch(InvestmentAction::AddPhoto(
+                index,
+                p.clone(),
+                description.clone(),
+            ));
         }
 
         id_state.set(id);
+    };
+
+    let oninput_description = {
+        let path = path.clone();
+        let i = index;
+        let pictures_dispatch = pictures_dispatcher.clone();
+        Callback::from(move |e: InputEvent| {
+            let input: HtmlInputElement = e.target_unchecked_into();
+            let d = input.value();
+            if let Some(p) = &path {
+                uploads_dispatcher.dispatch(InvestmentAction::AddPhoto(i, p.clone(), d.clone()));
+            }
+            pictures_dispatch.dispatch(Actions::AddDescription(id, d));
+        })
     };
 
     if bytes.is_some() && data.path.is_none() && !props.data.started_upload {
@@ -202,7 +224,7 @@ pub fn picture(props: &Props) -> Html {
                                                 )
                                             },
                                             |p| {
-                                                format!("http://127.0.0.1:8081/{}", p.replace(".jpg", "_thumb.jpg"))
+                                                format!("{API_ROOT}/{}", p.replace(".jpg", "_thumb.jpg"))
 
                                             },
                                         ) } style="max-width:100%; max-height:100%;"/>
@@ -219,8 +241,12 @@ pub fn picture(props: &Props) -> Html {
                     </div>
                     <div class="col-md-8">
                         <div class="card-body">
-                            <h5 class="card-title">{name}<br /><small class="card-title text-muted">{data.mime}</small></h5>
-                            { p.map(|path| { html!(<>{"url: "}{path}</>)}) }
+                            <h5 class="card-title">{name}</h5>
+                            <div class="form-floating">
+                                <textarea class="form-control" id="floatingTextarea2" style="height: 100px"
+                                    oninput={oninput_description} value={description.clone()}></textarea>
+                                <label for="floatingTextarea2">{"Description"}</label>
+                            </div>
                         </div>
                     </div>
                 </div>
