@@ -22,6 +22,7 @@ pub enum InvestmentAction {
     Init,
     AddPhoto(usize, String, String),
     SetName(String),
+    SetLocation(String),
     SetMaturity(Option<time::Date>),
     SetExpiration(Option<time::Date>),
     SetDescription(String),
@@ -38,6 +39,7 @@ pub enum InvestmentAction {
 #[derive(Clone, Debug, Serialize, PartialEq)]
 pub struct InvestmentInfo {
     pub name: String,
+    pub location: String,
     pub maturity: Option<time::Date>,
     pub expiration: Option<time::Date>,
     pub description: String,
@@ -52,6 +54,7 @@ impl Default for InvestmentInfo {
     fn default() -> Self {
         Self {
             name: String::new(),
+            location: String::new(),
             maturity: None,
             expiration: None,
             description: String::new(),
@@ -71,38 +74,26 @@ impl Reducible for InvestmentInfo {
         let mut new = (*self).clone();
         match action {
             InvestmentAction::Init => new = Self::default(),
-            InvestmentAction::SetName(name) => {
-                new.name = name;
-            }
-            InvestmentAction::SetDescription(description) => {
-                new.description = description;
-            }
+            InvestmentAction::SetName(name) => new.name = name,
+            InvestmentAction::SetDescription(description) => new.description = description,
             InvestmentAction::AddPhoto(index, path, desc) => {
                 if index + 1 > new.photos.len() {
                     new.photos.resize(index + 1, (String::new(), String::new()));
                 }
                 new.photos[index] = (path, desc);
             }
-            InvestmentAction::SetMaturity(date) => {
-                new.maturity = date;
-            }
-            InvestmentAction::SetExpiration(date) => {
-                new.expiration = date;
-            }
+            InvestmentAction::SetMaturity(date) => new.maturity = date,
+            InvestmentAction::SetExpiration(date) => new.expiration = date,
             InvestmentAction::AddTag(tag) => {
                 if !tag.is_empty() {
                     new.tags.insert(tag.to_ascii_lowercase());
-                }
+                };
             }
             InvestmentAction::RemoveTag(tag) => {
                 new.tags.remove(&tag);
             }
-            InvestmentAction::SetValue(value) => {
-                new.value = value;
-            }
-            InvestmentAction::SetEarning(value) => {
-                new.earning = value;
-            }
+            InvestmentAction::SetValue(value) => new.value = value,
+            InvestmentAction::SetEarning(value) => new.earning = value,
             InvestmentAction::AddCost(name, value) => {
                 new.costs.push(InvestmentCost { name, value });
             }
@@ -117,6 +108,7 @@ impl Reducible for InvestmentInfo {
                 let temp = new.costs.remove(from);
                 new.costs.insert(to, temp);
             }
+            InvestmentAction::SetLocation(location) => new.location = location,
         };
         new.into()
     }
@@ -154,6 +146,14 @@ pub fn manage_investment(props: &Props) -> Html {
         Callback::from(move |e: InputEvent| {
             let input: HtmlInputElement = e.target_unchecked_into();
             investment_info.dispatch(InvestmentAction::SetName(input.value()));
+        })
+    };
+
+    let oninput_location = {
+        let investment_info = investment_info.dispatcher();
+        Callback::from(move |e: InputEvent| {
+            let input: HtmlInputElement = e.target_unchecked_into();
+            investment_info.dispatch(InvestmentAction::SetLocation(input.value()));
         })
     };
 
@@ -265,7 +265,7 @@ pub fn manage_investment(props: &Props) -> Html {
                     </div>
                     <div class="input-group mb-2">
                         <span class="input-group-text" title={"When will the investment round end?"}>
-                          <i class="fas fa-calendar-days"></i>
+                          <i class="fa-regular fa-calendar-plus"></i>
                         </span>
                         <div class="form-floating">
                             <input
@@ -278,7 +278,7 @@ pub fn manage_investment(props: &Props) -> Html {
                             <label for="investmentexpirationGroup">{"Investment Expiration"}</label>
                         </div>
                         <span class="input-group-text" title={"When will the investment be returned?"}>
-                          <i class="fas fa-calendar-days"></i>
+                          <i class="fa-regular fa-calendar-check"></i>
                         </span>
                         <div class="form-floating">
                             <input
@@ -289,6 +289,22 @@ pub fn manage_investment(props: &Props) -> Html {
                                 oninput={oninput_maturity}
                                 />
                             <label for="investmentmaturityGroup">{"Investment Maturity"}</label>
+                        </div>
+                    </div>
+                    <div class="input-group mb-2">
+                        <span class="input-group-text">
+                          <i class="fa-solid fa-map-location-dot"></i>
+                        </span>
+                        <div class="form-floating">
+                            <input
+                                class="form-control"
+                                type="text"
+                                id="investmentlocationGroup"
+                                placeholder="Investment Location"
+                                value={info.location.clone()}
+                                oninput={oninput_location}
+                                />
+                            <label for="investmentlocationGroup">{"Investment Location"}</label>
                         </div>
                     </div>
                     <div class="input-group mb-2">
