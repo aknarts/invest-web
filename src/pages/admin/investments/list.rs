@@ -4,6 +4,8 @@ use crate::components::modal::Modal;
 use crate::error::Error;
 use crate::hooks::use_user_context;
 use crate::services::admin::{get_investments_list, Role};
+use crate::types::WrapCounter;
+use serde::Serialize;
 use tracing::debug;
 use web_sys::{HtmlInputElement, InputEvent};
 use yew::prelude::*;
@@ -92,4 +94,16 @@ pub fn investments_list(props: &Props) -> HtmlResult {
         }
     };
     Ok(html_result)
+}
+
+#[derive(Default, Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize)]
+struct InvestmentLine {
+    pub id: i32,
+    pub name: String,
+    pub thumbnail: String,
+    pub description: String,
+    #[serde(skip_serializing)]
+    pub role: Role,
+    #[serde(skip_serializing)]
+    pub counter: WrapCounter,
 }
