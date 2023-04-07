@@ -7,6 +7,7 @@ use crate::components::table::Options;
 use crate::error::Error;
 use crate::hooks::use_user_context;
 use crate::services::admin::{get_investments_list, Investment};
+use crate::services::requests::API_ROOT;
 use crate::types::WrapCounter;
 use serde::Serialize;
 use serde_value::Value;
@@ -158,7 +159,28 @@ struct InvestmentLine {
 impl TableData for InvestmentLine {
     fn get_field_as_html(&self, field_name: &str) -> crate::components::table::error::Result<Html> {
         Ok(match field_name {
-            "id" => html!({ &self.id }),
+            "id" => match &self.investment.pictures {
+                None => {
+                    html!(<span>{ &self.id }</span>)
+                }
+                Some(p) => match p.first() {
+                    None => {
+                        html!(<span>{ &self.id }</span>)
+                    }
+                    Some(thumb) => {
+                        html!(<span class="d-flex align-items-center">
+                                <span style={ format!("width: 90px; \
+                                                        height: 90px; \
+                                                        background-size: cover; \
+                                                        display: inline-block; \
+                                                        background-position: center; \
+                                                        background-repeat: no-repeat; \
+                                                        background-image:url('{API_ROOT}/{}')", thumb.replace(".jpg", "_thumb.jpg")) }>
+                                </span>
+                            </span>)
+                    }
+                },
+            },
             "name" => html!({ &self.name }),
             "location" => html!({ &self.location.clone().unwrap_or_default() }),
             _ => html!(),
