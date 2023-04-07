@@ -132,7 +132,7 @@ pub fn manage_investment(props: &Props) -> Html {
     let onsubmit = {
         let investment = investment_info.dispatcher();
         let close = props.close.clone();
-        let investment_create = investment_create;
+        let investment_create = investment_create.clone();
         Callback::from(move |e: SubmitEvent| {
             e.prevent_default();
             investment_create.run();
@@ -140,6 +140,19 @@ pub fn manage_investment(props: &Props) -> Html {
             investment.dispatch(InvestmentAction::Init);
         })
     };
+
+    {
+        let counter = props.counter.clone();
+        use_effect_with_deps(
+            move |investment_create| {
+                if investment_create.data.is_some() {
+                    counter.increase();
+                }
+                || ()
+            },
+            investment_create,
+        );
+    }
 
     let oninput_name = {
         let investment_info = investment_info.dispatcher();

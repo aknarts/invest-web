@@ -45,6 +45,53 @@ impl PartialOrd for Role {
     }
 }
 
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
+pub struct Investment {
+    pub earning: Option<f64>,
+    pub expiration: time::Date,
+    pub id: i32,
+    pub location: Option<String>,
+    pub maturity: time::Date,
+    pub name: String,
+    pub pictures: Option<Vec<String>>,
+    pub published: bool,
+    pub published_date: time::Date,
+    pub tags: Option<Vec<String>>,
+    pub value: Option<f64>,
+}
+
+impl Default for Investment {
+    fn default() -> Self {
+        Self {
+            earning: None,
+            expiration: time::Date::MIN,
+            id: 0,
+            location: None,
+            maturity: time::Date::MIN,
+            name: String::new(),
+            pictures: None,
+            published: false,
+            published_date: time::Date::MIN,
+            tags: None,
+            value: None,
+        }
+    }
+}
+
+impl Eq for Investment {}
+
+impl PartialOrd<Self> for Investment {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        self.name.partial_cmp(&other.name)
+    }
+}
+
+impl Ord for Investment {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.name.cmp(&other.name)
+    }
+}
+
 #[derive(Serialize, Deserialize, Clone, Debug, Default, PartialEq, Eq)]
 pub struct RoleInfo {
     pub id: Option<i32>,
@@ -112,8 +159,8 @@ pub async fn delete_role(role: RoleId) -> Result<ApiResult, Error> {
     request_delete::<RoleId, ApiResult>("/admin/roles".to_string(), role).await
 }
 
-pub async fn get_investments_list() -> Result<Vec<Role>, Error> {
-    request_get::<Vec<Role>>("/admin/roles".to_string()).await
+pub async fn get_investments_list() -> Result<Vec<Investment>, Error> {
+    request_get::<Vec<Investment>>("/admin/investments".to_string()).await
 }
 
 pub async fn upload_picture(multipart: Form) -> Result<PictureUpload, Error> {
