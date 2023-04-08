@@ -77,6 +77,12 @@ pub fn investments_list(props: &Props) -> HtmlResult {
                     .data_property("location")
                     .header_class("user-select-none")
                     .build(),
+                ColumnBuilder::new("p.a. rate")
+                    .orderable(true)
+                    .short_name("p.a. rate")
+                    .data_property("rate")
+                    .header_class("user-select-none")
+                    .build(),
                 ColumnBuilder::new("Actions")
                     .data_property("actions")
                     .header_class("user-select-none")
@@ -89,6 +95,10 @@ pub fn investments_list(props: &Props) -> HtmlResult {
                     id: investment.id,
                     name: investment.name.clone(),
                     location: investment.location.clone(),
+                    rate: crate::utils::investments::calculate_rate(
+                        investment.value.unwrap_or_default(),
+                        investment.earning.unwrap_or_default(),
+                    ),
                     investment: investment.clone(),
                     counter: WrapCounter(Some(props.counter.clone())),
                 })
@@ -145,11 +155,12 @@ pub fn investments_list(props: &Props) -> HtmlResult {
     Ok(html_result)
 }
 
-#[derive(Default, Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize)]
+#[derive(Default, Debug, Clone, PartialEq, PartialOrd, Serialize)]
 struct InvestmentLine {
     pub id: i32,
     pub name: String,
     pub location: Option<String>,
+    pub rate: f64,
     #[serde(skip_serializing)]
     pub investment: Investment,
     #[serde(skip_serializing)]
@@ -182,7 +193,22 @@ impl TableData for InvestmentLine {
                 },
             },
             "name" => html!({ &self.name }),
+            "rate" => {
+                let rate = crate::utils::investments::calculate_pa_earnings(
+                    self.investment.value.unwrap_or_default(),
+                    self.investment.earning.unwrap_or_default(),
+                )
+                .unwrap_or(String::from("0"));
+                html!({ format!("{rate} %") })
+            }
             "location" => html!({ &self.location.clone().unwrap_or_default() }),
+            "actions" => {
+                html!(
+                    <>
+                        <ActionLine investment={self.investment.clone()} counter={self.counter.0.clone().unwrap()}/>
+                    </>
+                )
+            }
             _ => html!(),
         })
     }
@@ -194,6 +220,7 @@ impl TableData for InvestmentLine {
         Ok(match field_name {
             "id" => serde_value::to_value(self.id),
             "name" => serde_value::to_value(&self.name),
+            "rate" => serde_value::to_value(&self.rate),
             "location" => serde_value::to_value(&self.location),
             &_ => serde_value::to_value(""),
         }
@@ -205,4 +232,37 @@ impl TableData for InvestmentLine {
             self.name.to_lowercase().contains(&search.to_lowercase())
         })
     }
+}
+
+#[derive(Properties, PartialEq)]
+pub struct ActionLineProp {
+    pub investment: Investment,
+    pub counter: UseCounterHandle,
+}
+
+#[function_component(ActionLine)]
+fn action_line(_props: &ActionLineProp) -> Html {
+    let edit = use_state(|| false);
+    let _ed = edit.clone();
+    let delete = use_state(|| false);
+    let _del = delete.clone();
+
+    let onclick = {
+        Callback::from(move |_| {
+            edit.set(!*edit);
+        })
+    };
+
+    let onclick_delete = {
+        Callback::from(move |_| {
+            delete.set(!*delete);
+        })
+    };
+
+    html!(
+        <>
+            <button type="button" onclick={&onclick} class="btn btn-primary mx-1">{ "Edit" }</button>
+            <button type="button" onclick={&onclick_delete} class="btn btn-danger mx-1">{"Remove"}</button>
+        </>
+    )
 }

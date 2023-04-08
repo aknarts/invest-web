@@ -232,24 +232,14 @@ pub fn manage_investment(props: &Props) -> Html {
     let data = (*investment_info).clone();
     let value = format!("{}", data.value);
     let earning = format!("{}", data.earning);
-    let rate = (data.earning * 12.0) / data.value;
-    let paearning = if value.eq("0") || earning.eq("0") {
-        "0".to_string()
-    } else {
-        format!("{:.1}", (rate * 100.0))
-    };
-    let total_earnings = if data.maturity.is_none() || data.expiration.is_none() {
-        None
-    } else {
-        #[allow(clippy::cast_precision_loss)]
-        Some(format!(
-            "{:.1}",
-            (rate * (data.maturity.unwrap() - data.expiration.unwrap()).whole_days() as f64
-                / 365.0)
-                * 100.0
-        ))
-    };
-
+    let paearning = crate::utils::investments::calculate_pa_earnings(data.value, data.earning)
+        .unwrap_or(String::from("0"));
+    let total_earnings = crate::utils::investments::calculate_total_earnings(
+        data.value,
+        data.earning,
+        data.maturity,
+        data.expiration,
+    );
     let exp = data.expiration.map(|d| d.to_string());
     let mat = data.maturity.map(|d| d.to_string());
 

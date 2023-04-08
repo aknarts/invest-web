@@ -8,6 +8,7 @@ mod error;
 mod hooks;
 mod services;
 mod types;
+mod utils;
 
 fn main() {
     console_error_panic_hook::set_once();
