@@ -47,6 +47,7 @@ impl PartialOrd for Role {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 pub struct Investment {
+    pub description: Option<String>,
     pub earning: Option<f64>,
     pub expiration: time::Date,
     pub id: i32,
@@ -63,6 +64,7 @@ pub struct Investment {
 impl Default for Investment {
     fn default() -> Self {
         Self {
+            description: None,
             earning: None,
             expiration: time::Date::MIN,
             id: 0,

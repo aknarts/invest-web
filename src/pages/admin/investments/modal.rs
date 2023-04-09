@@ -138,6 +138,9 @@ pub fn manage_investment(props: &Props) -> Html {
                 investment_info.dispatch(InvestmentAction::SetMaturity(Some(investment.maturity)));
                 investment_info
                     .dispatch(InvestmentAction::SetExpiration(Some(investment.expiration)));
+                investment_info.dispatch(InvestmentAction::SetDescription(
+                    investment.description.clone().unwrap_or_default(),
+                ));
                 for tag in investment.tags.clone().unwrap_or_default() {
                     investment_info.dispatch(InvestmentAction::AddTag(tag.clone()));
                 }
