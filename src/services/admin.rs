@@ -53,7 +53,7 @@ pub struct Investment {
     pub location: Option<String>,
     pub maturity: time::Date,
     pub name: String,
-    pub pictures: Option<Vec<String>>,
+    pub pictures: Option<Vec<(String, Option<String>)>>,
     pub published: bool,
     pub published_date: time::Date,
     pub tags: Option<Vec<String>>,

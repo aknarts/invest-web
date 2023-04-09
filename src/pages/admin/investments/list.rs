@@ -189,7 +189,7 @@ impl TableData for InvestmentLine {
                                                         display: inline-block; \
                                                         background-position: center; \
                                                         background-repeat: no-repeat; \
-                                                        background-image:url('{API_ROOT}/{}')", thumb.replace(".jpg", "_thumb.jpg")) }>
+                                                        background-image:url('{API_ROOT}/{}')", thumb.0.replace(".jpg", "_thumb.jpg")) }>
                                 </span>
                             </span>)
                     }
@@ -246,7 +246,7 @@ pub struct ActionLineProp {
 #[function_component(ActionLine)]
 fn action_line(props: &ActionLineProp) -> Html {
     let edit = use_state(|| false);
-    let _ed = edit.clone();
+    let ed = edit.clone();
     let delete = use_state(|| false);
     let del = delete.clone();
 
@@ -266,6 +266,11 @@ fn action_line(props: &ActionLineProp) -> Html {
         <>
             <button type="button" onclick={&onclick} class="btn btn-primary mx-1">{ "Edit" }</button>
             <button type="button" onclick={&onclick_delete} class="btn btn-danger mx-1">{"Remove"}</button>
+            if *ed {
+                <Modal close={&onclick} active={ed} title="Edit Investment" >
+                    <ManageInvestment investment={props.investment.clone()} close={&onclick} counter={props.counter.clone()}/>
+                </Modal>
+            }
             if *del {
                 <Modal close={&onclick_delete} active={del} title="Delete investment" >
                     <DeleteInvestment investment={props.investment.clone()} close={&onclick_delete} counter={props.counter.clone()}/>

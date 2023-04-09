@@ -1,7 +1,7 @@
 use super::costs::{Costs, InvestmentCost};
 use super::pictures::Pictures;
 use super::tags::Tags;
-use crate::services::admin::create_investment;
+use crate::services::admin::{create_investment, Investment};
 use serde::Serialize;
 use std::collections::HashSet;
 use std::rc::Rc;
@@ -14,6 +14,7 @@ use yew_hooks::{use_async, UseCounterHandle};
 
 #[derive(Properties, PartialEq)]
 pub struct Props {
+    pub investment: Option<Investment>,
     pub close: Callback<MouseEvent>,
     pub counter: UseCounterHandle,
 }
@@ -117,6 +118,45 @@ impl Reducible for InvestmentInfo {
 #[function_component(ManageInvestment)]
 pub fn manage_investment(props: &Props) -> Html {
     let investment_info = use_reducer(InvestmentInfo::default);
+    let investment_id = use_state(|| -1);
+    match &props.investment {
+        None => {}
+        Some(investment) => {
+            let id = *investment_id;
+            if id.eq(&-1) {
+                investment_id.set(investment.id);
+                investment_info.dispatch(InvestmentAction::SetName(investment.name.clone()));
+                investment_info.dispatch(InvestmentAction::SetLocation(
+                    investment.location.clone().unwrap_or_default(),
+                ));
+                investment_info.dispatch(InvestmentAction::SetEarning(
+                    investment.earning.unwrap_or_default(),
+                ));
+                investment_info.dispatch(InvestmentAction::SetValue(
+                    investment.value.unwrap_or_default(),
+                ));
+                investment_info.dispatch(InvestmentAction::SetMaturity(Some(investment.maturity)));
+                investment_info
+                    .dispatch(InvestmentAction::SetExpiration(Some(investment.expiration)));
+                for tag in investment.tags.clone().unwrap_or_default() {
+                    investment_info.dispatch(InvestmentAction::AddTag(tag.clone()));
+                }
+                for (index, picture) in investment
+                    .pictures
+                    .clone()
+                    .unwrap_or_default()
+                    .iter()
+                    .enumerate()
+                {
+                    investment_info.dispatch(InvestmentAction::AddPhoto(
+                        index,
+                        picture.0.clone(),
+                        picture.1.clone().unwrap_or_default(),
+                    ));
+                }
+            }
+        }
+    }
 
     let info = (*investment_info).clone();
     let format = format_description!("[year]-[month]-[day]");
