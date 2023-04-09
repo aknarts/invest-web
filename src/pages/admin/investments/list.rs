@@ -1,3 +1,4 @@
+use super::delete_investment_modal::DeleteInvestment;
 use super::modal::ManageInvestment;
 use crate::app::Route;
 use crate::components::modal::Modal;
@@ -130,9 +131,11 @@ pub fn investments_list(props: &Props) -> HtmlResult {
                         <div class="flex-shrink-0 p-2">
                             <button type="button" onclick={&onclick} class="btn btn-success">{ "Add Investment" }</button>
                         </div>
-                        <Modal close={&onclick} active={act} size={crate::components::modal::Size::Large} title="Add new investment" >
-                            <ManageInvestment close={&onclick} counter={props.counter.clone()}/>
-                        </Modal>
+                        if *act {
+                            <Modal close={&onclick} active={act} size={crate::components::modal::Size::Large} title="Add new investment" >
+                                <ManageInvestment close={&onclick} counter={props.counter.clone()}/>
+                            </Modal>
+                        }
                     }
                     </div>
                     <Table<InvestmentLine> {options} {search} classes={classes!("table", "table-hover")} columns={columns} data={data} orderable={true}/>
@@ -220,7 +223,7 @@ impl TableData for InvestmentLine {
         Ok(match field_name {
             "id" => serde_value::to_value(self.id),
             "name" => serde_value::to_value(&self.name),
-            "rate" => serde_value::to_value(&self.rate),
+            "rate" => serde_value::to_value(self.rate),
             "location" => serde_value::to_value(&self.location),
             &_ => serde_value::to_value(""),
         }
@@ -241,11 +244,11 @@ pub struct ActionLineProp {
 }
 
 #[function_component(ActionLine)]
-fn action_line(_props: &ActionLineProp) -> Html {
+fn action_line(props: &ActionLineProp) -> Html {
     let edit = use_state(|| false);
     let _ed = edit.clone();
     let delete = use_state(|| false);
-    let _del = delete.clone();
+    let del = delete.clone();
 
     let onclick = {
         Callback::from(move |_| {
@@ -263,6 +266,11 @@ fn action_line(_props: &ActionLineProp) -> Html {
         <>
             <button type="button" onclick={&onclick} class="btn btn-primary mx-1">{ "Edit" }</button>
             <button type="button" onclick={&onclick_delete} class="btn btn-danger mx-1">{"Remove"}</button>
+            if *del {
+                <Modal close={&onclick_delete} active={del} title="Delete investment" >
+                    <DeleteInvestment investment={props.investment.clone()} close={&onclick_delete} counter={props.counter.clone()}/>
+                </Modal>
+            }
         </>
     )
 }

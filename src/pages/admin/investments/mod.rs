@@ -1,5 +1,6 @@
 mod cost_line;
 mod costs;
+mod delete_investment_modal;
 mod list;
 pub mod modal;
 mod picture;

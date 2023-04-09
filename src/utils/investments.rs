@@ -16,21 +16,17 @@ pub fn calculate_total_earnings(
     maturity: Option<time::Date>,
     expiration: Option<time::Date>,
 ) -> Option<String> {
-    if value.le(&0.1) || earning.le(&0.1) {
+    if value.le(&0.1) || earning.le(&0.1) || maturity.is_none() || expiration.is_none() {
         None
     } else {
-        if maturity.is_none() || expiration.is_none() {
-            None
-        } else {
-            #[allow(clippy::cast_precision_loss)]
-            Some(format!(
-                "{:.1}",
-                (calculate_rate(value, earning)
-                    * (maturity.unwrap() - expiration.unwrap()).whole_days() as f64
-                    / 365.0)
-                    * 100.0
-            ))
-        }
+        #[allow(clippy::cast_precision_loss)]
+        Some(format!(
+            "{:.1}",
+            (calculate_rate(value, earning)
+                * (maturity.unwrap() - expiration.unwrap()).whole_days() as f64
+                / 365.0)
+                * 100.0
+        ))
     }
 }
 

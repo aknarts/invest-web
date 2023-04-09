@@ -200,9 +200,11 @@ fn action_line(props: &ActionLineProp) -> Html {
 
     html!(
         <>
-            <Modal close={&onclick} active={det} title={format!("User <mark>{}</mark> details", user.username)} >
-                <UserDetails user_id={user.id} close={&onclick} counter={props.counter.clone()}/>
-            </Modal>
+            if *det {
+                <Modal close={&onclick} active={det} title={format!("User <mark>{}</mark> details", user.username)} >
+                    <UserDetails user_id={user.id} close={&onclick} counter={props.counter.clone()}/>
+                </Modal>
+            }
             <button onclick={&onclick} type="button" class="btn btn-primary mx-1">{ "Details" }</button>
         </>
     )

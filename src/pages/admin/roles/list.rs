@@ -121,9 +121,11 @@ pub fn role_list(props: &Props) -> HtmlResult {
                         <div class="flex-shrink-0 p-2">
                             <button type="button" onclick={&onclick} class="btn btn-success">{ "Add Role" }</button>
                         </div>
-                        <Modal close={&onclick} active={act} title="Create new role" >
-                            <ManageRole close={&onclick} counter={props.counter.clone()}/>
-                        </Modal>
+                        if *act {
+                            <Modal close={&onclick} active={act} title="Create new role" >
+                                <ManageRole close={&onclick} counter={props.counter.clone()}/>
+                            </Modal>
+                        }
                     }
                     </div>
                     <Table<RoleLine> {options} {search} classes={classes!("table", "table-hover")} columns={columns} data={data} orderable={true}/>
@@ -230,12 +232,16 @@ fn action_line(props: &ActionLineProp) -> Html {
         <>
             <button type="button" onclick={&onclick} class="btn btn-primary mx-1">{ "Edit" }</button>
             <button type="button" onclick={&onclick_delete} class="btn btn-danger mx-1">{"Remove"}</button>
-            <Modal close={&onclick} active={ed} title="Edit role" >
-                <ManageRole role={props.role.clone()} close={&onclick} counter={props.counter.clone()}/>
-            </Modal>
-            <Modal close={&onclick_delete} active={del} title="Delete role" >
-                <DeleteRole role={props.role.clone()} close={&onclick_delete} counter={props.counter.clone()}/>
-            </Modal>
+            if *ed {
+                <Modal close={&onclick} active={ed} title="Edit role" >
+                    <ManageRole role={props.role.clone()} close={&onclick} counter={props.counter.clone()}/>
+                </Modal>
+            }
+            if *del {
+                <Modal close={&onclick_delete} active={del} title="Delete role" >
+                    <DeleteRole role={props.role.clone()} close={&onclick_delete} counter={props.counter.clone()}/>
+                </Modal>
+            }
         </>
     )
 }
