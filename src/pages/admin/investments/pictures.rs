@@ -102,6 +102,7 @@ impl Reducible for Reducer {
 #[derive(Properties, PartialEq)]
 pub struct Props {
     pub dispatcher: UseReducerDispatcher<InvestmentInfo>,
+    pub pictures: Vec<(String, String)>,
 }
 
 #[function_component(Pictures)]

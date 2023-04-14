@@ -424,7 +424,7 @@ pub fn manage_investment(props: &Props) -> Html {
                 <div class="border-bottom">
                     <Costs costs={info.costs.clone()} callback={dispatcher}/>
                 </div>
-                <Pictures dispatcher={investment_info.dispatcher()} />
+                <Pictures pictures={data.photos.clone()} dispatcher={investment_info.dispatcher()} />
             </div>
             <div class="modal-footer">
                 <form {onsubmit}>
