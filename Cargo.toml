@@ -10,24 +10,24 @@ keywords = ["yew", "trunk"]
 categories = ["gui", "wasm", "web-programming"]
 
 [dependencies]
-base64 = "0.21.0"
-console_error_panic_hook = "0.1.7"
-derivative = "2.2.0"
-gloo = "0.8.0"
+base64 = "0.21"
+console_error_panic_hook = "0.1"
+derivative = "2.2"
+gloo = "0.8"
 lazy_static = "1.4"
-parking_lot = "0.12.1"
-reqwest = { version = "0.11.7", features = ["json", "multipart"] }
+parking_lot = "0.12"
+reqwest = { version = "0.11", features = ["json", "multipart"] }
 serde = "1"
 serde-value = "0.7"
 thiserror = "1"
-time = { version = "0.3.17", features = ["parsing", "macros", "formatting", "serde"] }
+time = { version = "0.3", features = ["parsing", "macros", "formatting", "serde"] }
 tracing = "0.1"
 tracing-wasm = "0.2"
-uuid = { version = "1.3.0", features = ["v4", "js"] }
+uuid = { version = "1.3", features = ["v4", "js"] }
 wasm-logger = "0.2"
 web-sys = { version = "0.3", features = ["HtmlInputElement", "File", "FileList"] }
 yew = "0.20"
-yew-hooks = "0.2.0"
+yew-hooks = "0.2"
 yew-router = "0.17"
 
 [profile.release]

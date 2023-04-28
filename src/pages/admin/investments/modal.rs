@@ -119,47 +119,43 @@ impl Reducible for InvestmentInfo {
 pub fn manage_investment(props: &Props) -> Html {
     let investment_info = use_reducer(InvestmentInfo::default);
     let investment_id = use_state(|| -1);
-    match &props.investment {
-        None => {}
-        Some(investment) => {
-            let id = *investment_id;
-            if id.eq(&-1) {
-                investment_id.set(investment.id);
-                investment_info.dispatch(InvestmentAction::SetName(investment.name.clone()));
-                investment_info.dispatch(InvestmentAction::SetLocation(
-                    investment.location.clone().unwrap_or_default(),
+    props.investment.as_ref().map_or((), |investment| {
+        let id = *investment_id;
+        if id.eq(&-1) {
+            investment_id.set(investment.id);
+            investment_info.dispatch(InvestmentAction::SetName(investment.name.clone()));
+            investment_info.dispatch(InvestmentAction::SetLocation(
+                investment.location.clone().unwrap_or_default(),
+            ));
+            investment_info.dispatch(InvestmentAction::SetEarning(
+                investment.earning.unwrap_or_default(),
+            ));
+            investment_info.dispatch(InvestmentAction::SetValue(
+                investment.value.unwrap_or_default(),
+            ));
+            investment_info.dispatch(InvestmentAction::SetMaturity(Some(investment.maturity)));
+            investment_info.dispatch(InvestmentAction::SetExpiration(Some(investment.expiration)));
+            investment_info.dispatch(InvestmentAction::SetDescription(
+                investment.description.clone().unwrap_or_default(),
+            ));
+            for tag in investment.tags.clone().unwrap_or_default() {
+                investment_info.dispatch(InvestmentAction::AddTag(tag.clone()));
+            }
+            for (index, picture) in investment
+                .pictures
+                .clone()
+                .unwrap_or_default()
+                .iter()
+                .enumerate()
+            {
+                investment_info.dispatch(InvestmentAction::AddPhoto(
+                    index,
+                    picture.0.clone(),
+                    picture.1.clone().unwrap_or_default(),
                 ));
-                investment_info.dispatch(InvestmentAction::SetEarning(
-                    investment.earning.unwrap_or_default(),
-                ));
-                investment_info.dispatch(InvestmentAction::SetValue(
-                    investment.value.unwrap_or_default(),
-                ));
-                investment_info.dispatch(InvestmentAction::SetMaturity(Some(investment.maturity)));
-                investment_info
-                    .dispatch(InvestmentAction::SetExpiration(Some(investment.expiration)));
-                investment_info.dispatch(InvestmentAction::SetDescription(
-                    investment.description.clone().unwrap_or_default(),
-                ));
-                for tag in investment.tags.clone().unwrap_or_default() {
-                    investment_info.dispatch(InvestmentAction::AddTag(tag.clone()));
-                }
-                for (index, picture) in investment
-                    .pictures
-                    .clone()
-                    .unwrap_or_default()
-                    .iter()
-                    .enumerate()
-                {
-                    investment_info.dispatch(InvestmentAction::AddPhoto(
-                        index,
-                        picture.0.clone(),
-                        picture.1.clone().unwrap_or_default(),
-                    ));
-                }
             }
         }
-    }
+    });
 
     let info = (*investment_info).clone();
     let format = format_description!("[year]-[month]-[day]");
@@ -276,7 +272,7 @@ pub fn manage_investment(props: &Props) -> Html {
     let value = format!("{}", data.value);
     let earning = format!("{}", data.earning);
     let paearning = crate::utils::investments::calculate_pa_earnings(data.value, data.earning)
-        .unwrap_or(String::from("0"));
+        .unwrap_or_else(|| String::from("0"));
     let total_earnings = crate::utils::investments::calculate_total_earnings(
         data.value,
         data.earning,

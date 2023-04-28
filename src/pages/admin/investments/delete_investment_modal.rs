@@ -14,7 +14,7 @@ pub fn delete_role(props: &Props) -> Html {
     let investment = props
         .investment
         .as_ref()
-        .map_or(Investment::default(), Clone::clone);
+        .map_or_else(Investment::default, Clone::clone);
 
     let investment_delete = {
         let investment = investment.clone();

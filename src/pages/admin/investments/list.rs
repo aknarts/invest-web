@@ -102,7 +102,7 @@ pub fn investments_list(props: &Props) -> HtmlResult {
                     ),
                     investment: investment.clone(),
                     counter: WrapCounter(Some(props.counter.clone())),
-                })
+                });
             }
 
             let options = Options {
@@ -173,35 +173,24 @@ struct InvestmentLine {
 impl TableData for InvestmentLine {
     fn get_field_as_html(&self, field_name: &str) -> crate::components::table::error::Result<Html> {
         Ok(match field_name {
-            "id" => match &self.investment.pictures {
-                None => {
-                    html!(<span>{ &self.id }</span>)
-                }
-                Some(p) => match p.first() {
-                    None => {
-                        html!(<span>{ &self.id }</span>)
-                    }
-                    Some(thumb) => {
-                        html!(<span class="d-flex align-items-center">
-                                <span style={ format!("width: 90px; \
-                                                        height: 90px; \
-                                                        background-size: cover; \
-                                                        display: inline-block; \
-                                                        background-position: center; \
-                                                        background-repeat: no-repeat; \
-                                                        background-image:url('{API_ROOT}/{}')", thumb.0.replace(".jpg", "_thumb.jpg")) }>
-                                </span>
-                            </span>)
-                    }
-                },
-            },
+            "id" => self.investment.pictures.as_ref().map_or_else(|| html!(<span>{ &self.id }</span>), |p| p.first().map_or_else(|| html!(<span>{ &self.id }</span>), |thumb| html!(<span class="d-flex align-items-center">
+                     <span style={ format!("width: 90px; \
+                              height: 90px; \
+                              background-size: cover; \
+                              display: inline-block; \
+                              background-position: center; \
+                              background-repeat: no-repeat; \
+                              background-image:url('{API_ROOT}/{}')", thumb.0.replace(".jpg", "_thumb.jpg")) }>
+                     </span>
+                   </span>
+             ))),
             "name" => html!({ &self.name }),
             "rate" => {
                 let rate = crate::utils::investments::calculate_pa_earnings(
                     self.investment.value.unwrap_or_default(),
                     self.investment.earning.unwrap_or_default(),
                 )
-                .unwrap_or(String::from("0"));
+                .unwrap_or_else(|| String::from("0"));
                 html!({ format!("{rate} %") })
             }
             "location" => html!({ &self.location.clone().unwrap_or_default() }),
