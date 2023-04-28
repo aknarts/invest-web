@@ -1,0 +1,12 @@
+pub mod admin;
+pub mod confirm_email;
+pub mod footer;
+pub mod header;
+pub mod home;
+pub mod invest;
+pub mod login;
+pub mod overview;
+pub mod page_not_found;
+pub mod portfolio;
+pub mod profile;
+pub mod register;

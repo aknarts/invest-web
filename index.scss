@@ -1,35 +1,14 @@
-html,
-body {
-  height: 100%;
-  margin: 0;
+.burger {
+  background-color: transparent;
+  border: none;
 }
 
-body {
+.navbar-brand {
   align-items: center;
+}
+
+body {
   display: flex;
-  justify-content: center;
-
-  background: linear-gradient(to bottom right, #444444, #009a5b);
-  font-size: 1.5rem;
-}
-
-main {
-  color: #fff6d5;
-  font-family: sans-serif;
-  text-align: center;
-}
-
-.logo {
-  height: 20em;
-}
-
-.heart:after {
-  content: "❤️";
-
-  font-size: 1.75em;
-}
-
-h1 + .subtitle {
-  display: block;
-  margin-top: -1em;
+  min-height: 100vh;
+  flex-direction: column;
 }
